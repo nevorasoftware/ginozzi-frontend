@@ -1,20 +1,29 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { Vendedor, Negocio } from '../types';
+import { Vendedor, Negocio, Empresario, Rubro } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { Users, Plus, Search, Mail, Phone, CreditCard, BarChart2, ShieldAlert } from 'lucide-react';
+import { Users, Plus, Search, CreditCard, Layers } from 'lucide-react';
 
 export const Vendedores: React.FC = () => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [empresarios, setEmpresarios] = useState<Empresario[]>([]);
   const [negocios, setNegocios] = useState<Negocio[]>([]);
+  const [rubros, setRubros] = useState<Rubro[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [statsModalOpen, setStatsModalOpen] = useState(false);
   const [selectedStats, setSelectedStats] = useState<any>(null);
 
+  // Dependent Select States for Modal
+  const [selectedEmpresarioId, setSelectedEmpresarioId] = useState('');
+  const [availableNegocios, setAvailableNegocios] = useState<Negocio[]>([]);
+  const [availableRubros, setAvailableRubros] = useState<Rubro[]>([]);
+
   const [formData, setFormData] = useState({
+    empresarioId: '',
     negocioId: '',
+    rubroId: '',
     nombre: '',
     apellido: '',
     correo: '',
@@ -30,18 +39,65 @@ export const Vendedores: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [vendData, negData] = await Promise.all([
+      const [vendData, empData, negData, rubData] = await Promise.all([
         apiService.getVendedores(),
+        apiService.getEmpresarios(),
         apiService.getNegocios(),
+        apiService.getRubros(),
       ]);
       setVendedores(vendData);
+      setEmpresarios(empData);
       setNegocios(negData);
-      if (negData.length > 0) {
-        setFormData((prev) => ({ ...prev, negocioId: negData[0].id }));
+      setRubros(rubData);
+
+      if (empData.length > 0) {
+        setSelectedEmpresarioId(empData[0].id);
+        const filteredNegs = negData.filter(n => n.empresarioId === empData[0].id);
+        setAvailableNegocios(filteredNegs);
+        const firstNegId = filteredNegs[0]?.id || '';
+        const filteredRubs = rubData.filter(r => r.negocioId === firstNegId);
+        setAvailableRubros(filteredRubs);
+
+        setFormData(prev => ({
+          ...prev,
+          empresarioId: empData[0].id,
+          negocioId: firstNegId,
+          rubroId: filteredRubs[0]?.id || '',
+        }));
       }
     } catch (e) {
       console.error(e);
     }
+  };
+
+  // Dependent Select Logic: When Empresario Changes
+  const handleEmpresarioChange = (empId: string) => {
+    setSelectedEmpresarioId(empId);
+    const filteredNegs = negocios.filter(n => n.empresarioId === empId);
+    setAvailableNegocios(filteredNegs);
+
+    const firstNegId = filteredNegs[0]?.id || '';
+    const filteredRubs = rubros.filter(r => r.negocioId === firstNegId);
+    setAvailableRubros(filteredRubs);
+
+    setFormData(prev => ({
+      ...prev,
+      empresarioId: empId,
+      negocioId: firstNegId,
+      rubroId: filteredRubs[0]?.id || '',
+    }));
+  };
+
+  // Dependent Select Logic: When Negocio Changes
+  const handleNegocioChange = (negId: string) => {
+    const filteredRubs = rubros.filter(r => r.negocioId === negId);
+    setAvailableRubros(filteredRubs);
+
+    setFormData(prev => ({
+      ...prev,
+      negocioId: negId,
+      rubroId: filteredRubs[0]?.id || '',
+    }));
   };
 
   const handleCreate = async (e: React.FormEvent) => {
@@ -86,8 +142,10 @@ export const Vendedores: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Gestión de Vendedores</h1>
-          <p className="text-xs text-slate-400 font-medium">Control de agentes comerciales y fuerza de ventas</p>
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <Users className="h-7 w-7 text-emerald-400" /> Gestión de Vendedores
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">Control de agentes comerciales asociados a Empresario, Negocio y Rubro</p>
         </div>
 
         <button
@@ -123,6 +181,7 @@ export const Vendedores: React.FC = () => {
                 <th className="p-4">DUI</th>
                 <th className="p-4">Contacto</th>
                 <th className="p-4">Negocio</th>
+                <th className="p-4">Rubro</th>
                 <th className="p-4">Clientes</th>
                 <th className="p-4">Estado</th>
                 <th className="p-4 text-right">Acciones</th>
@@ -146,6 +205,12 @@ export const Vendedores: React.FC = () => {
                   </td>
                   <td className="p-4 font-semibold text-emerald-400">
                     {vend.negocio?.nombre || 'N/A'}
+                  </td>
+                  <td className="p-4 text-indigo-300 font-medium">
+                    <span className="flex items-center gap-1">
+                      <Layers className="h-3.5 w-3.5 text-indigo-400" />
+                      {vend.rubro?.nombre || vend.negocio?.rubro || 'General'}
+                    </span>
                   </td>
                   <td className="p-4 font-semibold text-slate-300">
                     {vend._count?.clientes || 0} Clientes
@@ -180,22 +245,70 @@ export const Vendedores: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Create Vendedor */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Nuevo Vendedor">
+      {/* Modal Create Vendedor with Cascading Dependent Selects */}
+      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Nuevo Vendedor (Jerarquía Completa)">
         <form onSubmit={handleCreate} className="space-y-4">
+          {/* Step 1: Select Empresario */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Negocio Asignado</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              1. Empresario *
+            </label>
+            <select
+              required
+              value={selectedEmpresarioId}
+              onChange={(e) => handleEmpresarioChange(e.target.value)}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+            >
+              {empresarios.map((emp) => (
+                <option key={emp.id} value={emp.id}>
+                  {emp.nombre} {emp.apellido} ({emp.correo})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Step 2: Select Negocio (Filtered by Empresario) */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              2. Negocio Asignado *
+            </label>
             <select
               required
               value={formData.negocioId}
-              onChange={(e) => setFormData({ ...formData, negocioId: e.target.value })}
+              onChange={(e) => handleNegocioChange(e.target.value)}
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
             >
-              {negocios.map((neg) => (
-                <option key={neg.id} value={neg.id}>
-                  {neg.nombre} ({neg.rubro})
-                </option>
-              ))}
+              {availableNegocios.length === 0 ? (
+                <option value="">No hay negocios para este empresario</option>
+              ) : (
+                availableNegocios.map((neg) => (
+                  <option key={neg.id} value={neg.id}>
+                    {neg.nombre} ({neg.rubro || 'General'})
+                  </option>
+                ))
+              )}
+            </select>
+          </div>
+
+          {/* Step 3: Select Rubro (Filtered by Negocio) */}
+          <div>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+              3. Rubro Específico *
+            </label>
+            <select
+              value={formData.rubroId}
+              onChange={(e) => setFormData({ ...formData, rubroId: e.target.value })}
+              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+            >
+              {availableRubros.length === 0 ? (
+                <option value="">Sin rubro específico (General)</option>
+              ) : (
+                availableRubros.map((rub) => (
+                  <option key={rub.id} value={rub.id}>
+                    {rub.nombre} - {rub.descripcion || 'Sin descripción'}
+                  </option>
+                ))
+              )}
             </select>
           </div>
 
@@ -207,7 +320,7 @@ export const Vendedores: React.FC = () => {
                 required
                 value={formData.nombre}
                 onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                placeholder="Alejandro"
+                placeholder="Carlos"
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -218,7 +331,7 @@ export const Vendedores: React.FC = () => {
                 required
                 value={formData.apellido}
                 onChange={(e) => setFormData({ ...formData, apellido: e.target.value })}
-                placeholder="Hernández"
+                placeholder="López"
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -297,7 +410,7 @@ export const Vendedores: React.FC = () => {
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-slate-950 border border-slate-800">
               <h4 className="text-sm font-bold text-white">{selectedStats.vendedor.nombre}</h4>
-              <p className="text-xs text-emerald-400">{selectedStats.vendedor.negocio}</p>
+              <p className="text-xs text-emerald-400">{selectedStats.vendedor.negocio} - {selectedStats.vendedor.rubro}</p>
             </div>
 
             <div className="grid grid-cols-2 gap-3">

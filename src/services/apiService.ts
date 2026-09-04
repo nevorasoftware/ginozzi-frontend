@@ -1,8 +1,9 @@
 import { apiClient } from '../api/client';
-import { Empresario, Negocio, Vendedor, Cliente, ProductoServicio, Venta, DashboardResumen, VentasPeriodoData, TopVendedorData } from '../types';
+import { Empresario, Negocio, Rubro, Vendedor, Cliente, ProductoServicio, Venta, DashboardResumen, VentasPeriodoData, TopVendedorData, FilterState } from '../types';
 import {
   mockEmpresarios,
   mockNegocios,
+  mockRubros,
   mockVendedores,
   mockClientes,
   mockProductosServicios,
@@ -18,8 +19,7 @@ export const apiService = {
     try {
       const res = await apiClient.post('/auth/login', { correo, contrasena });
       return res.data;
-    } catch (err) {
-      // Fallback demo login if network or server issue occurs
+    } catch {
       if (correo === 'admin@ginozzi.com') {
         return {
           accessToken: 'demo-token-admin',
@@ -37,7 +37,7 @@ export const apiService = {
       return {
         accessToken: 'demo-token-vend',
         refreshToken: 'demo-refresh-token',
-        user: { id: 'usr-vend-01', correo, nombre: 'Alejandro', apellido: 'Hernández', role: 'VENDEDOR', vendedorId: 'vend-01' },
+        user: { id: 'usr-vend-01', correo, nombre: 'Carlos', apellido: 'López', role: 'VENDEDOR', vendedorId: 'vend-01' },
       };
     }
   },
@@ -149,14 +149,77 @@ export const apiService = {
     }
   },
 
-  // Vendedores
-  getVendedores: async (negocioId?: string) => {
+  // Rubros
+  getRubros: async (negocioId?: string) => {
     try {
-      const res = await apiClient.get<Vendedor[]>('/vendedores', { params: { negocioId } });
-      const data = res.data && res.data.length > 0 ? res.data : mockVendedores;
-      return negocioId ? data.filter(v => v.negocioId === negocioId) : data;
+      const res = await apiClient.get<Rubro[]>('/rubros', { params: { negocioId } });
+      const data = res.data && res.data.length > 0 ? res.data : mockRubros;
+      return negocioId ? data.filter(r => r.negocioId === negocioId) : data;
     } catch {
-      return negocioId ? mockVendedores.filter(v => v.negocioId === negocioId) : mockVendedores;
+      return negocioId ? mockRubros.filter(r => r.negocioId === negocioId) : mockRubros;
+    }
+  },
+  createRubro: async (data: Partial<Rubro>) => {
+    try {
+      const res = await apiClient.post<Rubro>('/rubros', data);
+      return res.data;
+    } catch {
+      const newRub: Rubro = {
+        id: `rub-${Date.now()}`,
+        negocioId: data.negocioId || 'neg-01',
+        nombre: data.nombre || 'Nuevo Rubro',
+        descripcion: data.descripcion || '',
+        estado: 'ACTIVO',
+        createdAt: new Date().toISOString(),
+      };
+      mockRubros.unshift(newRub);
+      return newRub;
+    }
+  },
+  updateRubro: async (id: string, data: Partial<Rubro>) => {
+    try {
+      const res = await apiClient.patch<Rubro>(`/rubros/${id}`, data);
+      return res.data;
+    } catch {
+      const rub = mockRubros.find(r => r.id === id);
+      if (rub) Object.assign(rub, data);
+      return rub || mockRubros[0];
+    }
+  },
+  toggleRubroStatus: async (id: string, estado: 'ACTIVO' | 'INACTIVO') => {
+    try {
+      const res = await apiClient.patch<Rubro>(`/rubros/${id}/status`, { estado });
+      return res.data;
+    } catch {
+      const rub = mockRubros.find(r => r.id === id);
+      if (rub) rub.estado = estado;
+      return rub || mockRubros[0];
+    }
+  },
+  deleteRubro: async (id: string) => {
+    try {
+      await apiClient.delete(`/rubros/${id}`);
+    } catch {
+      const idx = mockRubros.findIndex(r => r.id === id);
+      if (idx !== -1) mockRubros.splice(idx, 1);
+    }
+  },
+
+  // Vendedores
+  getVendedores: async (params?: { negocioId?: string; rubroId?: string; empresarioId?: string }) => {
+    try {
+      const res = await apiClient.get<Vendedor[]>('/vendedores', { params });
+      let data = res.data && res.data.length > 0 ? res.data : mockVendedores;
+      if (params?.negocioId) data = data.filter(v => v.negocioId === params.negocioId);
+      if (params?.rubroId) data = data.filter(v => v.rubroId === params.rubroId);
+      if (params?.empresarioId) data = data.filter(v => v.empresarioId === params.empresarioId);
+      return data;
+    } catch {
+      let data = mockVendedores;
+      if (params?.negocioId) data = data.filter(v => v.negocioId === params.negocioId);
+      if (params?.rubroId) data = data.filter(v => v.rubroId === params.rubroId);
+      if (params?.empresarioId) data = data.filter(v => v.empresarioId === params.empresarioId);
+      return data;
     }
   },
   createVendedor: async (data: Partial<Vendedor> & { contrasena?: string }) => {
@@ -166,7 +229,9 @@ export const apiService = {
     } catch {
       const newVend: Vendedor = {
         id: `vend-${Date.now()}`,
+        empresarioId: data.empresarioId || 'emp-01',
         negocioId: data.negocioId || 'neg-01',
+        rubroId: data.rubroId || 'rub-01',
         nombre: data.nombre || 'Nuevo',
         apellido: data.apellido || 'Vendedor',
         correo: data.correo || 'vendedor@ginozzi.com',
@@ -205,7 +270,7 @@ export const apiService = {
       const res = await apiClient.get(`/vendedores/${id}/estadisticas`);
       return res.data;
     } catch {
-      return { totalVendido: 14850.0, totalGanancias: 3712.5, cantidadVentas: 31, cantidadClientes: 22 };
+      return { totalVendido: 15200.0, totalGanancias: 2280.0, cantidadVentas: 48, cantidadClientes: 12 };
     }
   },
 
@@ -226,6 +291,9 @@ export const apiService = {
     } catch {
       const newCli: Cliente = {
         id: `cli-${Date.now()}`,
+        empresarioId: data.empresarioId || 'emp-01',
+        negocioId: data.negocioId || 'neg-01',
+        rubroId: data.rubroId || 'rub-01',
         vendedorId: data.vendedorId || 'vend-01',
         nombre: data.nombre || 'Nuevo',
         apellido: data.apellido || 'Cliente',
@@ -238,18 +306,30 @@ export const apiService = {
       return newCli;
     }
   },
+  updateCliente: async (id: string, data: Partial<Cliente>) => {
+    try {
+      const res = await apiClient.patch<Cliente>(`/clientes/${id}`, data);
+      return res.data;
+    } catch {
+      const cli = mockClientes.find(c => c.id === id);
+      if (cli) Object.assign(cli, data);
+      return cli || mockClientes[0];
+    }
+  },
 
   // Productos & Servicios
-  getProductosServicios: async (negocioId?: string, tipo?: string) => {
+  getProductosServicios: async (negocioId?: string, rubroId?: string, tipo?: string) => {
     try {
-      const res = await apiClient.get<ProductoServicio[]>('/productos-servicios', { params: { negocioId, tipo } });
+      const res = await apiClient.get<ProductoServicio[]>('/productos-servicios', { params: { negocioId, rubroId, tipo } });
       let data = res.data && res.data.length > 0 ? res.data : mockProductosServicios;
       if (negocioId) data = data.filter(p => p.negocioId === negocioId);
+      if (rubroId) data = data.filter(p => p.rubroId === rubroId);
       if (tipo) data = data.filter(p => p.tipo === tipo);
       return data;
     } catch {
       let data = mockProductosServicios;
       if (negocioId) data = data.filter(p => p.negocioId === negocioId);
+      if (rubroId) data = data.filter(p => p.rubroId === rubroId);
       if (tipo) data = data.filter(p => p.tipo === tipo);
       return data;
     }
@@ -261,10 +341,13 @@ export const apiService = {
     } catch {
       const newProd: ProductoServicio = {
         id: `ps-${Date.now()}`,
+        empresarioId: data.empresarioId || 'emp-01',
         negocioId: data.negocioId || 'neg-01',
+        rubroId: data.rubroId || 'rub-01',
         nombre: data.nombre || 'Nuevo Producto / Servicio',
         tipo: data.tipo || 'PRODUCTO',
         precio: data.precio || 100.0,
+        codigo: data.codigo || `PROD-${Date.now()}`,
         estado: 'ACTIVO',
         createdAt: new Date().toISOString(),
       };
@@ -274,11 +357,12 @@ export const apiService = {
   },
 
   // Ventas
-  getVentas: async (params?: { negocioId?: string; vendedorId?: string; clienteId?: string; estado?: string }) => {
+  getVentas: async (params?: { negocioId?: string; rubroId?: string; vendedorId?: string; clienteId?: string; estado?: string }) => {
     try {
       const res = await apiClient.get<Venta[]>('/ventas', { params });
       let data = res.data && res.data.length > 0 ? res.data : mockVentas;
       if (params?.negocioId) data = data.filter(v => v.negocioId === params.negocioId);
+      if (params?.rubroId) data = data.filter(v => v.rubroId === params.rubroId);
       if (params?.vendedorId) data = data.filter(v => v.vendedorId === params.vendedorId);
       if (params?.clienteId) data = data.filter(v => v.clienteId === params.clienteId);
       if (params?.estado) data = data.filter(v => v.estado === params.estado);
@@ -286,6 +370,7 @@ export const apiService = {
     } catch {
       let data = mockVentas;
       if (params?.negocioId) data = data.filter(v => v.negocioId === params.negocioId);
+      if (params?.rubroId) data = data.filter(v => v.rubroId === params.rubroId);
       if (params?.vendedorId) data = data.filter(v => v.vendedorId === params.vendedorId);
       if (params?.clienteId) data = data.filter(v => v.clienteId === params.clienteId);
       if (params?.estado) data = data.filter(v => v.estado === params.estado);
@@ -299,7 +384,9 @@ export const apiService = {
     } catch {
       const newVta: Venta = {
         id: `vta-${Date.now()}`,
+        empresarioId: data.empresarioId || 'emp-01',
         negocioId: data.negocioId || 'neg-01',
+        rubroId: data.rubroId || 'rub-01',
         vendedorId: data.vendedorId || 'vend-01',
         clienteId: data.clienteId || 'cli-01',
         fechaVenta: new Date().toISOString(),
@@ -325,34 +412,65 @@ export const apiService = {
     }
   },
 
-  // Dashboard API
-  getDashboardResumen: async () => {
+  // Dashboard API with FilterState support
+  getDashboardResumen: async (filters?: FilterState) => {
     try {
-      const res = await apiClient.get<DashboardResumen>('/dashboard/resumen');
+      const params: any = {};
+      if (filters?.empresarioIds?.length) params.empresarioIds = filters.empresarioIds.join(',');
+      if (filters?.negocioIds?.length) params.negocioIds = filters.negocioIds.join(',');
+      if (filters?.rubroIds?.length) params.rubroIds = filters.rubroIds.join(',');
+      if (filters?.vendedorIds?.length) params.vendedorIds = filters.vendedorIds.join(',');
+      if (filters?.period) params.period = filters.period;
+      if (filters?.from) params.from = filters.from;
+      if (filters?.to) params.to = filters.to;
+
+      const res = await apiClient.get<DashboardResumen>('/dashboard/resumen', { params });
       return res.data && res.data.kpis ? res.data : mockDashboardResumen;
     } catch {
       return mockDashboardResumen;
     }
   },
-  getVentasPeriodo: async (from?: string, to?: string, groupBy: string = 'month') => {
+  getVentasPeriodo: async (filters?: FilterState, groupBy: string = 'month') => {
     try {
-      const res = await apiClient.get<VentasPeriodoData[]>('/dashboard/ventas-periodo', { params: { from, to, groupBy } });
+      const params: any = { groupBy };
+      if (filters?.empresarioIds?.length) params.empresarioIds = filters.empresarioIds.join(',');
+      if (filters?.negocioIds?.length) params.negocioIds = filters.negocioIds.join(',');
+      if (filters?.rubroIds?.length) params.rubroIds = filters.rubroIds.join(',');
+      if (filters?.vendedorIds?.length) params.vendedorIds = filters.vendedorIds.join(',');
+      if (filters?.period) params.period = filters.period;
+      if (filters?.from) params.from = filters.from;
+      if (filters?.to) params.to = filters.to;
+
+      const res = await apiClient.get<VentasPeriodoData[]>('/dashboard/ventas-periodo', { params });
       return res.data && res.data.length > 0 ? res.data : mockVentasPeriodo;
     } catch {
       return mockVentasPeriodo;
     }
   },
-  getTopVendedores: async (limit: number = 5, from?: string, to?: string) => {
+  getTopVendedores: async (limit: number = 5, filters?: FilterState) => {
     try {
-      const res = await apiClient.get<TopVendedorData[]>('/dashboard/top-vendedores', { params: { limit, from, to } });
+      const params: any = { limit };
+      if (filters?.empresarioIds?.length) params.empresarioIds = filters.empresarioIds.join(',');
+      if (filters?.negocioIds?.length) params.negocioIds = filters.negocioIds.join(',');
+      if (filters?.rubroIds?.length) params.rubroIds = filters.rubroIds.join(',');
+      if (filters?.vendedorIds?.length) params.vendedorIds = filters.vendedorIds.join(',');
+      if (filters?.period) params.period = filters.period;
+
+      const res = await apiClient.get<TopVendedorData[]>('/dashboard/top-vendedores', { params });
       return res.data && res.data.length > 0 ? res.data : mockTopVendedores;
     } catch {
       return mockTopVendedores;
     }
   },
-  getRendimientoVendedores: async (negocioId?: string, vendedorId?: string) => {
+  getRendimientoVendedores: async (filters?: FilterState) => {
     try {
-      const res = await apiClient.get('/dashboard/rendimiento-vendedores', { params: { negocioId, vendedorId } });
+      const params: any = {};
+      if (filters?.empresarioIds?.length) params.empresarioIds = filters.empresarioIds.join(',');
+      if (filters?.negocioIds?.length) params.negocioIds = filters.negocioIds.join(',');
+      if (filters?.rubroIds?.length) params.rubroIds = filters.rubroIds.join(',');
+      if (filters?.vendedorIds?.length) params.vendedorIds = filters.vendedorIds.join(',');
+
+      const res = await apiClient.get('/dashboard/rendimiento-vendedores', { params });
       return res.data;
     } catch {
       return mockTopVendedores;

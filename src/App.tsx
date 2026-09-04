@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Login } from './pages/Login';
 import { Dashboard } from './pages/Dashboard';
 import { Empresarios } from './pages/Empresarios';
 import { Negocios } from './pages/Negocios';
+import { RubrosPage } from './pages/Rubros';
 import { Vendedores } from './pages/Vendedores';
 import { Clientes } from './pages/Clientes';
 import { ProductosServicios } from './pages/ProductosServicios';
@@ -65,6 +66,7 @@ export function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/empresarios" element={<Empresarios />} />
               <Route path="/negocios" element={<Negocios />} />
+              <Route path="/rubros" element={<RubrosPage />} />
               <Route path="/vendedores" element={<Vendedores />} />
               <Route path="/clientes" element={<Clientes />} />
               <Route path="/productos-servicios" element={<ProductosServicios />} />

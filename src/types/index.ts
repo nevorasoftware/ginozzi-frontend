@@ -26,19 +26,34 @@ export interface Negocio {
   id: string;
   empresarioId: string;
   nombre: string;
-  rubro: string;
+  rubro?: string;
   telefono: string;
   correo: string;
   porcentajeGanancia: number;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt: string;
   empresario?: Empresario;
+  rubros?: Rubro[];
   vendedores?: Vendedor[];
+}
+
+export interface Rubro {
+  id: string;
+  negocioId: string;
+  nombre: string;
+  descripcion?: string;
+  estado: 'ACTIVO' | 'INACTIVO';
+  createdAt: string;
+  negocio?: Negocio;
+  vendedores?: Vendedor[];
+  productosServicios?: ProductoServicio[];
 }
 
 export interface Vendedor {
   id: string;
+  empresarioId?: string;
   negocioId: string;
+  rubroId?: string;
   nombre: string;
   apellido: string;
   correo: string;
@@ -46,12 +61,17 @@ export interface Vendedor {
   dui: string;
   estado: 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO';
   fechaCreacion: string;
+  empresario?: Empresario;
   negocio?: Negocio;
+  rubro?: Rubro;
   _count?: { clientes: number; ventas: number };
 }
 
 export interface Cliente {
   id: string;
+  empresarioId?: string;
+  negocioId?: string;
+  rubroId?: string;
   vendedorId: string;
   nombre: string;
   apellido: string;
@@ -62,25 +82,34 @@ export interface Cliente {
   observaciones?: string;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt: string;
+  empresario?: Empresario;
+  negocio?: Negocio;
+  rubro?: Rubro;
   vendedor?: Vendedor;
 }
 
 export interface ProductoServicio {
   id: string;
+  empresarioId?: string;
   negocioId: string;
+  rubroId?: string;
   nombre: string;
   descripcion?: string;
+  codigo?: string;
   tipo: 'PRODUCTO' | 'SERVICIO';
   precio: number;
   estado: 'ACTIVO' | 'INACTIVO';
   createdAt: string;
+  empresario?: Empresario;
   negocio?: Negocio;
+  rubro?: Rubro;
 }
 
 export interface VentaDetalle {
   id: string;
   ventaId: string;
   productoServicioId: string;
+  nombreProductoSnapshot?: string;
   cantidad: number;
   precioUnitario: number;
   descuento: number;
@@ -90,7 +119,9 @@ export interface VentaDetalle {
 
 export interface Venta {
   id: string;
+  empresarioId?: string;
   negocioId: string;
+  rubroId?: string;
   vendedorId: string;
   clienteId: string;
   fechaVenta: string;
@@ -101,7 +132,9 @@ export interface Venta {
   montoGanancia: number;
   observaciones?: string;
   estado: 'COMPLETADA' | 'ANULADA' | 'PENDIENTE';
+  empresario?: Empresario;
   negocio?: Negocio;
+  rubro?: Rubro;
   vendedor?: Vendedor;
   cliente?: Cliente;
   detalles?: VentaDetalle[];
@@ -111,6 +144,7 @@ export interface DashboardResumen {
   kpis: {
     totalEmpresarios: number;
     totalNegocios: number;
+    totalRubros?: number;
     totalVendedores: number;
     vendedoresActivos: number;
     totalClientes: number;
@@ -119,6 +153,7 @@ export interface DashboardResumen {
     gananciasMesTotal: number;
     ventasAcumuladasTotal: number;
     gananciasAcumuladasTotal: number;
+    promedioTicket?: number;
   };
 }
 
@@ -138,4 +173,14 @@ export interface TopVendedorData {
   totalGanancias: number;
   cantidadVentas: number;
   cantidadClientes: number;
+}
+
+export interface FilterState {
+  period: '1M' | '3M' | '6M' | '12M' | 'custom';
+  empresarioIds: string[];
+  negocioIds: string[];
+  rubroIds: string[];
+  vendedorIds: string[];
+  from?: string;
+  to?: string;
 }

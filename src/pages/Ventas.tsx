@@ -3,7 +3,7 @@ import { apiService } from '../services/apiService';
 import { Venta } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { TrendingUp, Search, Eye, Ban, Calendar, User, Store, FileText } from 'lucide-react';
+import { TrendingUp, Search, Eye, Ban, Calendar, User, Store, Layers } from 'lucide-react';
 
 export const Ventas: React.FC = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
@@ -47,15 +47,18 @@ export const Ventas: React.FC = () => {
       v.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${v.vendedor?.nombre} ${v.vendedor?.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${v.cliente?.nombre} ${v.cliente?.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.negocio?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
+      v.negocio?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      v.rubro?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
     <div className="space-y-6 animate-fadeIn">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Historial de Ventas</h1>
-          <p className="text-xs text-slate-400 font-medium">Registro de transacciones comerciales y cálculo de ganancias</p>
+          <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+            <TrendingUp className="h-7 w-7 text-emerald-400" /> Historial de Ventas Multi-Negocio
+          </h1>
+          <p className="text-xs text-slate-400 font-medium">Registro de transacciones comerciales con desglose por Rubro y Snapshots</p>
         </div>
       </div>
 
@@ -65,7 +68,7 @@ export const Ventas: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Buscar por ID de venta, vendedor, cliente o negocio..."
+            placeholder="Buscar por ID de venta, vendedor, cliente, rubro o negocio..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60"
@@ -81,12 +84,12 @@ export const Ventas: React.FC = () => {
               <tr className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
                 <th className="p-4">ID Venta</th>
                 <th className="p-4">Fecha</th>
-                <th className="p-4">Negocio</th>
+                <th className="p-4">Negocio / Rubro</th>
                 <th className="p-4">Vendedor</th>
                 <th className="p-4">Cliente</th>
                 <th className="p-4 text-right">Total Facturado</th>
                 <th className="p-4 text-right">% Ganancia</th>
-                <th className="p-4 text-right">Ganancia Net</th>
+                <th className="p-4 text-right">Ganancia Neta</th>
                 <th className="p-4">Estado</th>
                 <th className="p-4 text-right">Acciones</th>
               </tr>
@@ -98,7 +101,13 @@ export const Ventas: React.FC = () => {
                   <td className="p-4 text-slate-400 font-medium">
                     {new Date(v.fechaVenta).toLocaleDateString()}
                   </td>
-                  <td className="p-4 font-semibold text-slate-200">{v.negocio?.nombre}</td>
+                  <td className="p-4 font-semibold text-slate-200">
+                    <div>{v.negocio?.nombre || 'General'}</div>
+                    <div className="text-[10px] text-indigo-400 flex items-center gap-1 mt-0.5">
+                      <Layers className="h-3 w-3" />
+                      {v.rubro?.nombre || v.negocio?.rubro || 'Rubro'}
+                    </div>
+                  </td>
                   <td className="p-4 text-slate-300">
                     {v.vendedor ? `${v.vendedor.nombre} ${v.vendedor.apellido}` : 'N/A'}
                   </td>
@@ -143,7 +152,7 @@ export const Ventas: React.FC = () => {
       </div>
 
       {/* Detail Modal */}
-      <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Detalle Completo de la Venta">
+      <Modal isOpen={detailModalOpen} onClose={() => setDetailModalOpen(false)} title="Detalle Completo & Snapshot de Venta">
         {selectedVenta && (
           <div className="space-y-6">
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -156,22 +165,41 @@ export const Ventas: React.FC = () => {
                 <p className="text-sm font-extrabold text-emerald-400 font-mono">${selectedVenta.total.toFixed(2)}</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">% Aplicado</span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase">% Ganancia</span>
                 <p className="text-sm font-extrabold text-amber-400 font-mono">{selectedVenta.porcentajeGanancia}%</p>
               </div>
               <div className="p-3 rounded-xl bg-slate-950 border border-slate-800">
-                <span className="text-[10px] text-slate-400 font-semibold uppercase">Monto Ganancia</span>
+                <span className="text-[10px] text-slate-400 font-semibold uppercase">Ganancia Neta</span>
                 <p className="text-sm font-extrabold text-indigo-400 font-mono">${selectedVenta.montoGanancia.toFixed(2)}</p>
               </div>
             </div>
 
+            {/* Context Details */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 bg-slate-900/60 rounded-xl border border-slate-800 text-xs">
+              <div>
+                <span className="text-slate-400 font-medium">Negocio:</span>{' '}
+                <span className="text-white font-bold">{selectedVenta.negocio?.nombre || 'N/A'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Rubro:</span>{' '}
+                <span className="text-indigo-400 font-bold">{selectedVenta.rubro?.nombre || selectedVenta.negocio?.rubro || 'General'}</span>
+              </div>
+              <div>
+                <span className="text-slate-400 font-medium">Vendedor:</span>{' '}
+                <span className="text-emerald-400 font-bold">
+                  {selectedVenta.vendedor ? `${selectedVenta.vendedor.nombre} ${selectedVenta.vendedor.apellido}` : 'N/A'}
+                </span>
+              </div>
+            </div>
+
+            {/* Line items with snapshot names */}
             <div className="space-y-2">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Líneas de Detalle</h4>
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Líneas de Detalle (Snapshot Histórico)</h4>
               <div className="border border-slate-800 rounded-xl overflow-hidden bg-slate-950">
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="bg-slate-900 text-slate-400 border-b border-slate-800">
-                      <th className="p-3">Item / Producto / Servicio</th>
+                      <th className="p-3">Item / Producto (Snapshot)</th>
                       <th className="p-3 text-center">Cant.</th>
                       <th className="p-3 text-right">P. Unitario</th>
                       <th className="p-3 text-right">Subtotal</th>
@@ -181,7 +209,7 @@ export const Ventas: React.FC = () => {
                     {selectedVenta.detalles?.map((det) => (
                       <tr key={det.id}>
                         <td className="p-3 font-semibold text-white">
-                          {det.productoServicio?.nombre || 'Producto'}
+                          {det.nombreProductoSnapshot || det.productoServicio?.nombre || 'Producto / Servicio'}
                         </td>
                         <td className="p-3 text-center font-mono">{det.cantidad}</td>
                         <td className="p-3 text-right font-mono">${det.precioUnitario.toFixed(2)}</td>

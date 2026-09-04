@@ -4,6 +4,7 @@ import {
   LayoutDashboard,
   Building2,
   Store,
+  Layers,
   Users,
   UserCheck,
   ShoppingBag,
@@ -12,7 +13,6 @@ import {
   Settings,
   User,
   LogOut,
-  Sparkles,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -27,6 +27,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, isOpen, setIsO
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
     { label: 'Empresarios', path: '/empresarios', icon: Building2, roles: ['SUPER_ADMIN'] },
     { label: 'Negocios', path: '/negocios', icon: Store, roles: ['SUPER_ADMIN', 'EMPRESARIO'] },
+    { label: 'Rubros', path: '/rubros', icon: Layers, roles: ['SUPER_ADMIN', 'EMPRESARIO'] },
     { label: 'Vendedores', path: '/vendedores', icon: Users },
     { label: 'Clientes', path: '/clientes', icon: UserCheck },
     { label: 'Productos & Servicios', path: '/productos-servicios', icon: ShoppingBag },
