@@ -24,7 +24,8 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       onLoginSuccess(data.user, data.accessToken, data.refreshToken);
       navigate('/dashboard');
     } catch (err: any) {
-      setError(err.response?.data?.message || 'Error al iniciar sesión. Verifique credenciales.');
+      const msg = err.response?.data?.message || err.message || 'Error al conectar con el servidor backend.';
+      setError(Array.isArray(msg) ? msg.join(', ') : String(msg));
     } finally {
       setLoading(false);
     }
