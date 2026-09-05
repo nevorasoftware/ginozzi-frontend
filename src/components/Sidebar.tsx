@@ -1,5 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
+import creatorLogo from '../assets/creator-logo.jpg';
 import {
   LayoutDashboard,
   Building2,
@@ -61,9 +62,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, isOpen, setIsO
           {/* Logo Brand */}
           <div className="h-16 flex items-center justify-between px-6 border-b border-slate-800/80">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-indigo-600 flex items-center justify-center font-extrabold text-white text-lg shadow-lg shadow-emerald-500/20">
-                G
-              </div>
+              <img
+                src={creatorLogo}
+                alt="Ginozzi Logo"
+                className="w-9 h-9 rounded-xl object-cover border border-emerald-500/40 shadow-lg shadow-emerald-500/20"
+              />
               <div>
                 <span className="text-lg font-black tracking-wider text-white font-sans">GINOZZI</span>
                 <span className="block text-[10px] text-emerald-400 font-semibold tracking-widest uppercase">SAAS PLATFORM</span>

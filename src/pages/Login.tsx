@@ -47,9 +47,11 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
       <div className="w-full max-w-md my-auto">
         {/* Header Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 shadow-2xl shadow-emerald-500/20 mb-4">
-            <span className="text-3xl font-extrabold text-white">G</span>
-          </div>
+          <img
+            src={creatorLogo}
+            alt="Ginozzi Logo"
+            className="inline-block w-16 h-16 rounded-2xl object-cover border border-emerald-500/40 shadow-2xl shadow-emerald-500/20 mb-4"
+          />
           <h1 className="text-3xl font-black tracking-tight text-white font-sans">GINOZZI</h1>
           <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">Plataforma de Administración Comercial</p>
         </div>
