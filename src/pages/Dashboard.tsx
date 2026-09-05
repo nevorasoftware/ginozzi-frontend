@@ -64,9 +64,9 @@ export const Dashboard: React.FC = () => {
   const getGreetingByHour = () => {
     const hourStr = new Date().toLocaleTimeString('en-US', { timeZone: 'America/El_Salvador', hour12: false, hour: '2-digit' });
     const hour = parseInt(hourStr, 10);
-    if (hour >= 5 && hour < 12) return 'Buenos días';
-    if (hour >= 12 && hour < 19) return 'Buenas tardes';
-    return 'Buenas noches';
+    if (hour >= 5 && hour < 12) return 'Buenos días 🌅';
+    if (hour >= 12 && hour < 19) return 'Buenas tardes ☀️';
+    return 'Buenas noches 🌙';
   };
   const greeting = getGreetingByHour();
 
