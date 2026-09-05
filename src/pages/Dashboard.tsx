@@ -141,23 +141,111 @@ export const Dashboard: React.FC = () => {
   const performanceStatus = getPerformanceMessage(performanceRatio);
 
   // Target Goal Calculation for Hero Card (Empresario / SuperAdmin)
-  const monthlySales = resumen?.kpis.ventasMesTotal || 24850;
-  const targetGoal = 30000;
-  const goalPercentage = Math.min(Math.round((monthlySales / targetGoal) * 100), 100);
+  const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
   // Mock SaaS Clients / Companies list for SUPER_ADMIN
   const saasCompaniesList = [
-    { id: '1', nombre: 'Empresa ABC (Grupo Corporativo)', estado: 'Activa', usuarios: 18, cobroMensual: 180, plan: 'Enterprise' },
-    { id: '2', nombre: 'Empresa XYZ (Soluciones SV)', estado: 'Activa', usuarios: 7, cobroMensual: 70, plan: 'Pro Multi-Business' },
-    { id: '3', nombre: 'Juan Pérez (Consultor Independiente)', estado: 'Independiente', usuarios: 1, cobroMensual: 10, plan: 'Starter' },
+    {
+      id: 's1',
+      nombre: 'Empresa ABC (Grupo Corporativo)',
+      estado: 'Activa',
+      usuarios: 18,
+      cobroMensual: 180,
+      plan: 'Enterprise',
+      ventasMes: 31200,
+      vendedorLider: { nombre: 'Carlos López', ventas: 15200, empresa: 'Empresa ABC' },
+      mayorCrecimiento: { nombre: 'Jorge Ramírez', incremento: '+38% incremento', empresa: 'Empresa ABC' },
+    },
+    {
+      id: 's2',
+      nombre: 'Empresa XYZ (Soluciones SV)',
+      estado: 'Activa',
+      usuarios: 7,
+      cobroMensual: 70,
+      plan: 'Pro Multi-Business',
+      ventasMes: 12450,
+      vendedorLider: { nombre: 'Roberto Gómez', ventas: 7800, empresa: 'Empresa XYZ' },
+      mayorCrecimiento: { nombre: 'María Rodríguez', incremento: '+31% incremento', empresa: 'Empresa XYZ' },
+    },
+    {
+      id: 's3',
+      nombre: 'Juan Pérez (Consultor Independiente)',
+      estado: 'Independiente',
+      usuarios: 1,
+      cobroMensual: 10,
+      plan: 'Starter',
+      ventasMes: 5300,
+      vendedorLider: { nombre: 'Juan Pérez', ventas: 5300, empresa: 'Juan Pérez' },
+      mayorCrecimiento: { nombre: 'Juan Pérez', incremento: '+15% incremento', empresa: 'Juan Pérez' },
+    },
   ];
 
   // Mock Empresario Businesses list
   const empresarioBusinessesList = [
-    { id: '1', nombre: 'Ginozzi Tech & Solutions', rubro: 'Tecnología', vendedores: 12, ventasHoy: 14250, estado: 'Activo' },
-    { id: '2', nombre: 'Papelería & Librería Central', rubro: 'Librería', vendedores: 8, ventasHoy: 6800, estado: 'Activo' },
-    { id: '3', nombre: 'Servicios Digitales SV', rubro: 'Servicios', vendedores: 4, ventasHoy: 3800, estado: 'Activo' },
+    {
+      id: '1',
+      nombre: 'Ginozzi Tech & Solutions',
+      rubro: 'Tecnología',
+      vendedores: 12,
+      ventasHoy: 14250,
+      ventasMes: 28450,
+      estado: 'Activo',
+      vendedorLider: { nombre: 'Carlos López', ventas: 15200, empresa: 'Ginozzi Tech & Solutions' },
+      mayorCrecimiento: { nombre: 'Jorge Ramírez', incremento: '+38% incremento', empresa: 'Ginozzi Tech & Solutions' },
+    },
+    {
+      id: '2',
+      nombre: 'Papelería & Librería Central',
+      rubro: 'Librería',
+      vendedores: 8,
+      ventasHoy: 6800,
+      ventasMes: 13650,
+      estado: 'Activo',
+      vendedorLider: { nombre: 'Roberto Gómez', ventas: 7800, empresa: 'Papelería & Librería Central' },
+      mayorCrecimiento: { nombre: 'María Rodríguez', incremento: '+31% incremento', empresa: 'Papelería & Librería Central' },
+    },
+    {
+      id: '3',
+      nombre: 'Servicios Digitales SV',
+      rubro: 'Servicios',
+      vendedores: 4,
+      ventasHoy: 3800,
+      ventasMes: 6850,
+      estado: 'Activo',
+      vendedorLider: { nombre: 'Ana Rivas', ventas: 4200, empresa: 'Servicios Digitales SV' },
+      mayorCrecimiento: { nombre: 'Kevin Molina', incremento: '+22% incremento', empresa: 'Servicios Digitales SV' },
+    },
   ];
+
+  // Dynamic Selected Company Lookup
+  const selectedEmpresarioBusiness = empresarioBusinessesList.find((b) => b.id === selectedCardId);
+  const selectedSaasCompany = saasCompaniesList.find((c) => c.id === selectedCardId);
+  const selectedCompany = selectedEmpresarioBusiness || selectedSaasCompany;
+
+  // Dynamic Monthly Sales calculation (Default General = $48,950.00)
+  const displayMonthlySales = selectedCompany
+    ? selectedCompany.ventasMes
+    : (resumen?.kpis.ventasMesTotal || 48950);
+
+  const targetGoal = 30000;
+  const goalPercentage = Math.min(Math.round((displayMonthlySales / targetGoal) * 100), 100);
+
+  // Dynamic Mini Cards calculation
+  const displayVendedorLider = selectedCompany
+    ? selectedCompany.vendedorLider
+    : {
+        nombre: topVendedores[0]?.nombre || 'Carlos López',
+        ventas: topVendedores[0]?.totalVendido || 15200,
+        empresa: topVendedores[0]?.negocio || 'Ginozzi Tech & Solutions',
+      };
+
+  const displayMayorCrecimiento = selectedCompany
+    ? selectedCompany.mayorCrecimiento
+    : {
+        nombre: topVendedores[1]?.nombre || 'María Rodríguez',
+        incremento: '+31% incremento',
+        empresa: topVendedores[1]?.negocio || 'Papelería & Librería Central',
+      };
 
   return (
     <div className="space-y-8 animate-fadeIn">
@@ -304,24 +392,35 @@ export const Dashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {saasCompaniesList.map((empresa) => (
-                  <div
-                    key={empresa.id}
-                    className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-indigo-500/50 transition space-y-2 shadow-inner"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-white leading-tight">{empresa.nombre}</h4>
-                      <span className="inline-flex items-center text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        🟢 {empresa.estado}
-                      </span>
+                {saasCompaniesList.map((empresa) => {
+                  const isSelected = selectedCardId === empresa.id;
+                  return (
+                    <div
+                      key={empresa.id}
+                      onClick={() => setSelectedCardId(isSelected ? null : empresa.id)}
+                      className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2 shadow-inner ${
+                        isSelected
+                          ? 'bg-indigo-500/15 border-2 border-indigo-400 ring-2 ring-indigo-500/40 shadow-indigo-500/20 scale-[1.02]'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-indigo-500/50 hover:scale-[1.01]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                          {empresa.nombre}
+                          {isSelected && <span className="text-[10px] bg-indigo-500 text-white font-extrabold px-1.5 py-0.5 rounded-full">✓ Filtro</span>}
+                        </h4>
+                        <span className="inline-flex items-center text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          🟢 {empresa.estado}
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-400 font-mono">{empresa.usuarios} usuarios activos</p>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
+                        <span className="text-slate-400 font-medium">Suscripción:</span>
+                        <span className="font-extrabold text-emerald-400 font-mono">${empresa.cobroMensual}/mes</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-slate-400 font-mono">{empresa.usuarios} usuarios activos</p>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
-                      <span className="text-slate-400 font-medium">Suscripción:</span>
-                      <span className="font-extrabold text-emerald-400 font-mono">${empresa.cobroMensual}/mes</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -345,24 +444,35 @@ export const Dashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {empresarioBusinessesList.map((negocio) => (
-                  <div
-                    key={negocio.id}
-                    className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-emerald-500/50 transition space-y-2 shadow-inner"
-                  >
-                    <div className="flex items-center justify-between">
-                      <h4 className="text-sm font-bold text-white leading-tight">{negocio.nombre}</h4>
-                      <span className="inline-flex items-center text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        🟢 {negocio.estado}
-                      </span>
+                {empresarioBusinessesList.map((negocio) => {
+                  const isSelected = selectedCardId === negocio.id;
+                  return (
+                    <div
+                      key={negocio.id}
+                      onClick={() => setSelectedCardId(isSelected ? null : negocio.id)}
+                      className={`p-4 rounded-xl border transition-all cursor-pointer space-y-2 shadow-inner ${
+                        isSelected
+                          ? 'bg-emerald-500/15 border-2 border-emerald-400 ring-2 ring-emerald-500/40 shadow-emerald-500/20 scale-[1.02]'
+                          : 'bg-slate-950/80 border-slate-800 hover:border-emerald-500/50 hover:scale-[1.01]'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="text-sm font-bold text-white leading-tight flex items-center gap-1.5">
+                          {negocio.nombre}
+                          {isSelected && <span className="text-[10px] bg-emerald-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded-full">✓ Filtro</span>}
+                        </h4>
+                        <span className="inline-flex items-center text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                          🟢 {negocio.estado}
+                        </span>
+                      </div>
+                      <p className="text-xs text-indigo-400">{negocio.rubro} • {negocio.vendedores} vendedores</p>
+                      <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
+                        <span className="text-slate-400 font-medium">Facturado hoy:</span>
+                        <span className="font-extrabold text-emerald-400 font-mono">{formatCurrency(negocio.ventasHoy)}</span>
+                      </div>
                     </div>
-                    <p className="text-xs text-indigo-400">{negocio.rubro} • {negocio.vendedores} vendedores</p>
-                    <div className="flex justify-between items-center pt-2 border-t border-slate-800/80 text-xs">
-                      <span className="text-slate-400 font-medium">Facturado hoy:</span>
-                      <span className="font-extrabold text-emerald-400 font-mono">{formatCurrency(negocio.ventasHoy)}</span>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}
@@ -371,9 +481,26 @@ export const Dashboard: React.FC = () => {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 glass-card rounded-2xl p-6 border border-emerald-500/30 bg-gradient-to-br from-slate-900/90 via-slate-900/70 to-emerald-950/20 relative overflow-hidden shadow-2xl">
               <div className="flex items-center justify-between mb-4">
-                <span className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
-                  <Sparkles className="w-3.5 h-3.5" /> VENTAS DEL MES
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-extrabold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 px-3 py-1 rounded-full border border-emerald-500/20 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" /> VENTAS DEL MES
+                  </span>
+                  {selectedCompany && (
+                    <span className="text-[10px] font-bold text-emerald-300 bg-emerald-500/20 px-2 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                      <span>📍 {selectedCompany.nombre}</span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedCardId(null);
+                        }}
+                        className="hover:text-white ml-1 font-bold text-xs"
+                        title="Ver valores generales"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  )}
+                </div>
                 <span className="text-xs text-slate-400 font-semibold flex items-center gap-1">
                   <Target className="w-3.5 h-3.5 text-indigo-400" /> Meta Global: {formatCurrency(targetGoal)}
                 </span>
@@ -381,7 +508,7 @@ export const Dashboard: React.FC = () => {
 
               <div className="flex flex-col sm:flex-row sm:items-baseline gap-3 mb-6">
                 <span className="text-4xl sm:text-5xl font-black text-white font-mono tracking-tight">
-                  {formatCurrency(monthlySales)}
+                  {formatCurrency(displayMonthlySales)}
                 </span>
                 <div className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
                   ↑ 14.2% <span className="text-[10px] text-slate-400 font-normal ml-1">vs mes anterior</span>
@@ -404,33 +531,40 @@ export const Dashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Mini Cards (Vendedor Líder & Mayor Crecimiento con empresa) */}
             <div className="flex flex-col gap-4 justify-between">
               <div className="flex-1 glass-card rounded-2xl p-5 border border-amber-500/30 bg-slate-900/80 flex items-center justify-between hover:border-amber-500/50 transition">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1 mb-1">
-                    <Trophy className="w-3.5 h-3.5" /> #1 Vendedor Líder
+                <div className="space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-amber-400 flex items-center gap-1">
+                    <Trophy className="w-3.5 h-3.5" /> #1 VENDEDOR LÍDER
                   </span>
-                  <h4 className="text-lg font-bold text-white leading-tight">{topVendedores[0]?.nombre || 'Carlos'}</h4>
-                  <p className="text-xs font-mono font-extrabold text-emerald-400 mt-1">
-                    {formatCurrency(topVendedores[0]?.totalVendido || 8420)}
+                  <h4 className="text-lg font-bold text-white leading-tight">{displayVendedorLider.nombre}</h4>
+                  <p className="text-xs font-mono font-extrabold text-emerald-400">
+                    {formatCurrency(displayVendedorLider.ventas)}
+                  </p>
+                  <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 pt-0.5">
+                    <Store className="w-3 h-3 text-amber-400" /> {displayVendedorLider.empresa}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl font-black shadow-lg">
+                <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 text-xl font-black shadow-lg shrink-0">
                   🏆
                 </div>
               </div>
 
               <div className="flex-1 glass-card rounded-2xl p-5 border border-indigo-500/30 bg-slate-900/80 flex items-center justify-between hover:border-indigo-500/50 transition">
-                <div>
-                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1 mb-1">
-                    <TrendingUp className="w-3.5 h-3.5" /> Mayor Crecimiento
+                <div className="space-y-1">
+                  <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-400 flex items-center gap-1">
+                    <TrendingUp className="w-3.5 h-3.5" /> MAYOR CRECIMIENTO
                   </span>
-                  <h4 className="text-lg font-bold text-white leading-tight">{topVendedores[1]?.nombre || 'Ana'}</h4>
-                  <p className="text-xs font-mono font-extrabold text-indigo-300 mt-1">
-                    +31% <span className="text-[10px] text-slate-400 font-normal">incremento</span>
+                  <h4 className="text-lg font-bold text-white leading-tight">{displayMayorCrecimiento.nombre}</h4>
+                  <p className="text-xs font-mono font-extrabold text-indigo-300">
+                    {displayMayorCrecimiento.incremento}
+                  </p>
+                  <p className="text-[11px] font-semibold text-slate-400 flex items-center gap-1 pt-0.5">
+                    <Store className="w-3 h-3 text-indigo-400" /> {displayMayorCrecimiento.empresa}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl font-black shadow-lg">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 text-xl font-black shadow-lg shrink-0">
                   📈
                 </div>
               </div>
