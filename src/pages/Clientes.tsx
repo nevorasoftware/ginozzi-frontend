@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { Cliente, Vendedor } from '../types';
+import { Cliente, Vendedor, Negocio } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
 import { UserCheck, Search, Plus, Pencil, Trash2, AlertTriangle, CreditCard } from 'lucide-react';
@@ -8,6 +8,8 @@ import { UserCheck, Search, Plus, Pencil, Trash2, AlertTriangle, CreditCard } fr
 export const Clientes: React.FC = () => {
   const [clientes, setClientes] = useState<Cliente[]>([]);
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
+  const [selectedNegocio, setSelectedNegocio] = useState<string>('');
   const [selectedSeller, setSelectedSeller] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   
@@ -34,12 +36,14 @@ export const Clientes: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [cliData, vendData] = await Promise.all([
+      const [cliData, vendData, negData] = await Promise.all([
         apiService.getClientes(selectedSeller || undefined),
         apiService.getVendedores(),
+        apiService.getNegocios(),
       ]);
       setClientes(cliData);
       setVendedores(vendData);
+      setNegocios(negData);
       if (vendData.length > 0 && !formData.vendedorId) {
         setFormData(prev => ({ ...prev, vendedorId: vendData[0].id }));
       }
@@ -117,12 +121,30 @@ export const Clientes: React.FC = () => {
     }
   };
 
-  const filtered = clientes.filter(
-    (c) =>
+  const availableVendedores = selectedNegocio
+    ? vendedores.filter((v) => v.negocioId === selectedNegocio || v.negocio?.id === selectedNegocio)
+    : vendedores;
+
+  const filtered = clientes.filter((c) => {
+    const matchesSearch =
       `${c.nombre} ${c.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       c.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (c.dui && c.dui.includes(searchTerm))
-  );
+      (c.dui && c.dui.includes(searchTerm));
+
+    const matchesNegocio =
+      !selectedNegocio ||
+      c.negocioId === selectedNegocio ||
+      c.negocio?.id === selectedNegocio ||
+      c.vendedor?.negocioId === selectedNegocio ||
+      c.vendedor?.negocio?.id === selectedNegocio;
+
+    const matchesSeller =
+      !selectedSeller ||
+      c.vendedorId === selectedSeller ||
+      c.vendedor?.id === selectedSeller;
+
+    return matchesSearch && matchesNegocio && matchesSeller;
+  });
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -157,18 +179,36 @@ export const Clientes: React.FC = () => {
           />
         </div>
 
-        <select
-          value={selectedSeller}
-          onChange={(e) => setSelectedSeller(e.target.value)}
-          className="w-full sm:w-64 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
-        >
-          <option value="">Todos los vendedores</option>
-          {vendedores.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.nombre} {v.apellido} ({v.negocio?.nombre})
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <select
+            value={selectedNegocio}
+            onChange={(e) => {
+              setSelectedNegocio(e.target.value);
+              setSelectedSeller('');
+            }}
+            className="w-full sm:w-56 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los negocios</option>
+            {negocios.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.nombre}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedSeller}
+            onChange={(e) => setSelectedSeller(e.target.value)}
+            className="w-full sm:w-56 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los vendedores</option>
+            {availableVendedores.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.nombre} {v.apellido} ({v.negocio?.nombre || 'General'})
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Table */}

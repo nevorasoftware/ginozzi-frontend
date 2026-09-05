@@ -1,12 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { Venta } from '../types';
+import { Venta, Negocio, Vendedor } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
 import { TrendingUp, Search, Eye, Ban, Calendar, User, Store, Layers, Trash2, AlertTriangle } from 'lucide-react';
 
 export const Ventas: React.FC = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
+  const [negocios, setNegocios] = useState<Negocio[]>([]);
+  const [vendedores, setVendedores] = useState<Vendedor[]>([]);
+  const [selectedNegocio, setSelectedNegocio] = useState<string>('');
+  const [selectedSeller, setSelectedSeller] = useState<string>('');
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVenta, setSelectedVenta] = useState<Venta | null>(null);
   const [deletingVenta, setDeletingVenta] = useState<Venta | null>(null);
@@ -18,8 +22,14 @@ export const Ventas: React.FC = () => {
 
   const fetchVentas = async () => {
     try {
-      const data = await apiService.getVentas();
-      setVentas(data);
+      const [ventasData, negociosData, vendedoresData] = await Promise.all([
+        apiService.getVentas(),
+        apiService.getNegocios(),
+        apiService.getVendedores(),
+      ]);
+      setVentas(ventasData);
+      setNegocios(negociosData);
+      setVendedores(vendedoresData);
     } catch (e) {
       console.error(e);
     }
@@ -54,14 +64,31 @@ export const Ventas: React.FC = () => {
     setDetailModalOpen(true);
   };
 
-  const filtered = ventas.filter(
-    (v) =>
+  const availableVendedores = selectedNegocio
+    ? vendedores.filter((v) => v.negocioId === selectedNegocio || v.negocio?.id === selectedNegocio)
+    : vendedores;
+
+  const filtered = ventas.filter((v) => {
+    const matchesSearch =
       v.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${v.vendedor?.nombre} ${v.vendedor?.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       `${v.cliente?.nombre} ${v.cliente?.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.negocio?.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.rubro?.nombre.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      v.rubro?.nombre.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const matchesNegocio =
+      !selectedNegocio ||
+      v.negocioId === selectedNegocio ||
+      v.negocio?.id === selectedNegocio ||
+      v.vendedor?.negocioId === selectedNegocio;
+
+    const matchesSeller =
+      !selectedSeller ||
+      v.vendedorId === selectedSeller ||
+      v.vendedor?.id === selectedSeller;
+
+    return matchesSearch && matchesNegocio && matchesSeller;
+  });
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -76,8 +103,8 @@ export const Ventas: React.FC = () => {
       </div>
 
       {/* Filter */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800/80 bg-slate-900/40">
-        <div className="relative w-full sm:w-96">
+      <div className="glass-card rounded-2xl p-4 border border-slate-800/80 bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
@@ -86,6 +113,37 @@ export const Ventas: React.FC = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60"
           />
+        </div>
+
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <select
+            value={selectedNegocio}
+            onChange={(e) => {
+              setSelectedNegocio(e.target.value);
+              setSelectedSeller('');
+            }}
+            className="w-full sm:w-56 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los negocios</option>
+            {negocios.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.nombre}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedSeller}
+            onChange={(e) => setSelectedSeller(e.target.value)}
+            className="w-full sm:w-56 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los vendedores</option>
+            {availableVendedores.map((v) => (
+              <option key={v.id} value={v.id}>
+                {v.nombre} {v.apellido} ({v.negocio?.nombre || 'General'})
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
