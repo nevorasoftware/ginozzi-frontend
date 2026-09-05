@@ -97,6 +97,14 @@ export const apiService = {
       return emp || mockEmpresarios[0];
     }
   },
+  deleteEmpresario: async (id: string) => {
+    try {
+      await apiClient.delete(`/empresarios/${id}`);
+    } catch {
+      const idx = mockEmpresarios.findIndex(e => e.id === id);
+      if (idx !== -1) mockEmpresarios.splice(idx, 1);
+    }
+  },
 
   // Negocios
   getNegocios: async (empresarioId?: string) => {

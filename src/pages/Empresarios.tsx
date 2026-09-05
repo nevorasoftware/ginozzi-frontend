@@ -3,13 +3,15 @@ import { apiService } from '../services/apiService';
 import { Empresario } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { Building2, Plus, Search, Mail, Phone, UserCheck, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Building2, Plus, Search, Mail, Phone, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 
 export const Empresarios: React.FC = () => {
   const [empresarios, setEmpresarios] = useState<Empresario[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingEmpresario, setEditingEmpresario] = useState<Empresario | null>(null);
+  const [deleteConfirmEmpresario, setDeleteConfirmEmpresario] = useState<Empresario | null>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -36,15 +38,44 @@ export const Empresarios: React.FC = () => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingEmpresario(null);
+    setFormData({
+      nombre: '',
+      apellido: '',
+      correo: '',
+      telefono: '',
+      estado: 'ACTIVO',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (emp: Empresario) => {
+    setEditingEmpresario(emp);
+    setFormData({
+      nombre: emp.nombre,
+      apellido: emp.apellido,
+      correo: emp.correo,
+      telefono: emp.telefono,
+      estado: emp.estado,
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiService.createEmpresario(formData);
+      if (editingEmpresario) {
+        await apiService.updateEmpresario(editingEmpresario.id, formData);
+      } else {
+        await apiService.createEmpresario(formData);
+      }
       setIsModalOpen(false);
+      setEditingEmpresario(null);
       setFormData({ nombre: '', apellido: '', correo: '', telefono: '', estado: 'ACTIVO' });
       fetchEmpresarios();
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Error al crear empresario');
+      alert(e.response?.data?.message || 'Error al guardar empresario');
     }
   };
 
@@ -55,6 +86,17 @@ export const Empresarios: React.FC = () => {
       fetchEmpresarios();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirmEmpresario) return;
+    try {
+      await apiService.deleteEmpresario(deleteConfirmEmpresario.id);
+      setDeleteConfirmEmpresario(null);
+      fetchEmpresarios();
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Error al eliminar empresario');
     }
   };
 
@@ -74,7 +116,7 @@ export const Empresarios: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center justify-center px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 text-xs tracking-wide transition-all"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -135,16 +177,33 @@ export const Empresarios: React.FC = () => {
                     <StatusBadge status={emp.estado} />
                   </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => handleToggleStatus(emp)}
-                      className={`px-3 py-1.5 rounded-lg font-semibold text-[11px] border transition-colors ${
-                        emp.estado === 'ACTIVO'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                      }`}
-                    >
-                      {emp.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
-                    </button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => handleOpenEditModal(emp)}
+                        className="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 rounded-lg border border-slate-700 transition-colors"
+                        title="Editar empresario"
+                      >
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(emp)}
+                        className={`px-2.5 py-1.5 rounded-lg font-semibold text-[11px] border transition-colors ${
+                          emp.estado === 'ACTIVO'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                        }`}
+                        title={emp.estado === 'ACTIVO' ? 'Inhabilitar empresario' : 'Habilitar empresario'}
+                      >
+                        {emp.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
+                      </button>
+                      <button
+                        onClick={() => setDeleteConfirmEmpresario(emp)}
+                        className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg border border-rose-500/30 transition-colors"
+                        title="Eliminar empresario"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -153,9 +212,16 @@ export const Empresarios: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Create Empresario */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Nuevo Empresario">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Modal Create/Edit Empresario */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEmpresario(null);
+        }}
+        title={editingEmpresario ? 'Editar Empresario' : 'Registrar Nuevo Empresario'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Nombre</label>
@@ -205,10 +271,27 @@ export const Empresarios: React.FC = () => {
             />
           </div>
 
+          {editingEmpresario && (
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Estado</label>
+              <select
+                value={formData.estado}
+                onChange={(e) => setFormData({ ...formData, estado: e.target.value as 'ACTIVO' | 'INACTIVO' })}
+                className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
+              >
+                <option value="ACTIVO">ACTIVO</option>
+                <option value="INACTIVO">INACTIVO</option>
+              </select>
+            </div>
+          )}
+
           <div className="pt-4 flex justify-end space-x-3">
             <button
               type="button"
-              onClick={() => setIsModalOpen(false)}
+              onClick={() => {
+                setIsModalOpen(false);
+                setEditingEmpresario(null);
+              }}
               className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
             >
               Cancelar
@@ -217,10 +300,46 @@ export const Empresarios: React.FC = () => {
               type="submit"
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20"
             >
-              Guardar Empresario
+              {editingEmpresario ? 'Guardar Cambios' : 'Guardar Empresario'}
             </button>
           </div>
         </form>
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      <Modal
+        isOpen={!!deleteConfirmEmpresario}
+        onClose={() => setDeleteConfirmEmpresario(null)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs">
+            <AlertTriangle className="w-6 h-6 flex-shrink-0" />
+            <div>
+              <p className="font-bold">¿Eliminar este empresario?</p>
+              <p className="text-[11px] text-rose-200/80">
+                Se eliminará a <strong>{deleteConfirmEmpresario?.nombre} {deleteConfirmEmpresario?.apellido}</strong> ({deleteConfirmEmpresario?.correo}) y sus accesos asociados.
+              </p>
+            </div>
+          </div>
+
+          <div className="pt-2 flex justify-end space-x-3">
+            <button
+              type="button"
+              onClick={() => setDeleteConfirmEmpresario(null)}
+              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+            >
+              Cancelar
+            </button>
+            <button
+              type="button"
+              onClick={handleConfirmDelete}
+              className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-600/20"
+            >
+              Eliminar Definitivamente
+            </button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
