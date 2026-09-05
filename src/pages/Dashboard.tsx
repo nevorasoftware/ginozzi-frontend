@@ -64,11 +64,11 @@ export const Dashboard: React.FC = () => {
   const getGreetingByHour = () => {
     const hourStr = new Date().toLocaleTimeString('en-US', { timeZone: 'America/El_Salvador', hour12: false, hour: '2-digit' });
     const hour = parseInt(hourStr, 10);
-    if (hour >= 5 && hour < 12) return 'Buenos días 🌅';
-    if (hour >= 12 && hour < 19) return 'Buenas tardes ☀️';
-    return 'Buenas noches 🌙';
+    if (hour >= 5 && hour < 12) return { emoji: '🌅', text: 'Buenos días' };
+    if (hour >= 12 && hour < 19) return { emoji: '☀️', text: 'Buenas tardes' };
+    return { emoji: '🌙', text: 'Buenas noches' };
   };
-  const greeting = getGreetingByHour();
+  const { emoji: greetingEmoji, text: greetingText } = getGreetingByHour();
 
   // Advanced Hierarchical Multi-Select Filter State
   const [filters, setFilters] = useState<FilterState>({
@@ -192,7 +192,7 @@ export const Dashboard: React.FC = () => {
           {/* Greeting Banner */}
           <div className="p-6 rounded-2xl bg-gradient-to-r from-slate-900 via-slate-900/80 to-emerald-950/40 border border-slate-800/80 shadow-2xl">
             <h1 className="text-3xl font-black text-white tracking-tight">
-              {greeting}, {currentUser.nombre}.
+              {greetingEmoji} {greetingText}, {currentUser.nombre} 👤
             </h1>
             <p className="text-xs text-slate-400 mt-1">
               Aquí está tu resumen de rendimiento y ventas del día de hoy.
@@ -268,7 +268,7 @@ export const Dashboard: React.FC = () => {
             <div>
               <div className="flex items-center gap-2">
                 <h1 className="text-2xl font-black text-white tracking-tight">
-                  {greeting}, {currentUser.nombre} 👋
+                  {greetingEmoji} {greetingText}, {currentUser.nombre} 👤
                 </h1>
               </div>
               <p className="text-xs text-slate-400 font-medium mt-1 flex items-center gap-2">
