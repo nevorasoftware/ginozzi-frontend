@@ -48,7 +48,7 @@ export const Estadisticas: React.FC = () => {
     <div className="space-y-8 animate-fadeIn">
       <div>
         <h1 className="text-2xl font-black text-white tracking-tight">Estadísticas & Analítica Avanzada</h1>
-        <p className="text-xs text-slate-400 font-medium">WHOOP-inspired performance indicators and comparative visual analytics</p>
+        <p className="text-xs text-slate-400 font-medium">Indicadores de rendimiento comercial y analítica visual comparativa</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
