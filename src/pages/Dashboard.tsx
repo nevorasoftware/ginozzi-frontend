@@ -247,6 +247,81 @@ export const Dashboard: React.FC = () => {
         empresa: topVendedores[1]?.negocio || 'Papelería & Librería Central',
       };
 
+  // Dynamic Ranking of Sellers per Company / General Scenario
+  const getDynamicRankingVendedores = () => {
+    if (selectedCardId === '1' || selectedCardId === 's1') {
+      return [
+        { id: 'v1', nombre: 'Carlos López', negocio: 'Ginozzi Tech & Solutions', totalVendido: 15200, cuota: 94 },
+        { id: 'v2', nombre: 'Pedro Hernández', negocio: 'Ginozzi Tech & Solutions', totalVendido: 9500, cuota: 78 },
+        { id: 'v3', nombre: 'Jorge Ramírez', negocio: 'Ginozzi Tech & Solutions', totalVendido: 7200, cuota: 65 },
+        { id: 'v4', nombre: 'Lucía Fernández', negocio: 'Ginozzi Tech & Solutions', totalVendido: 5400, cuota: 50 },
+      ];
+    } else if (selectedCardId === '2' || selectedCardId === 's2') {
+      return [
+        { id: 'v5', nombre: 'María Rodríguez', negocio: 'Papelería & Librería Central', totalVendido: 14100, cuota: 91 },
+        { id: 'v6', nombre: 'Roberto Gómez', negocio: 'Papelería & Librería Central', totalVendido: 7800, cuota: 68 },
+        { id: 'v7', nombre: 'Laura Martínez', negocio: 'Papelería & Librería Central', totalVendido: 6500, cuota: 59 },
+        { id: 'v8', nombre: 'Fernando Ruiz', negocio: 'Papelería & Librería Central', totalVendido: 4800, cuota: 42 },
+      ];
+    } else if (selectedCardId === '3' || selectedCardId === 's3') {
+      return [
+        { id: 'v9', nombre: 'Ana Martínez', negocio: 'Servicios Digitales SV', totalVendido: 12800, cuota: 88 },
+        { id: 'v10', nombre: 'Kevin Molina', negocio: 'Servicios Digitales SV', totalVendido: 5100, cuota: 64 },
+        { id: 'v11', nombre: 'Sofia Benítez', negocio: 'Servicios Digitales SV', totalVendido: 3900, cuota: 49 },
+        { id: 'v12', nombre: 'David Flores', negocio: 'Servicios Digitales SV', totalVendido: 2600, cuota: 35 },
+      ];
+    } else {
+      // General Scenario (All Companies)
+      if (topVendedores.length > 0) {
+        return topVendedores.map((v, i) => ({
+          ...v,
+          cuota: [94, 87, 72, 58, 45][i] || 60,
+        }));
+      }
+      return [
+        { id: 'vg1', nombre: 'Carlos López', negocio: 'Ginozzi Tech & Solutions', totalVendido: 15200, cuota: 94 },
+        { id: 'vg2', nombre: 'María Rodríguez', negocio: 'Papelería & Librería Central', totalVendido: 14100, cuota: 87 },
+        { id: 'vg3', nombre: 'Ana Martínez', negocio: 'Servicios Digitales SV', totalVendido: 12800, cuota: 72 },
+        { id: 'vg4', nombre: 'Pedro Hernández', negocio: 'Ginozzi Tech & Solutions', totalVendido: 9500, cuota: 58 },
+        { id: 'vg5', nombre: 'Roberto Gómez', negocio: 'Papelería & Librería Central', totalVendido: 7800, cuota: 45 },
+      ];
+    }
+  };
+
+  const displayRankingVendedores = getDynamicRankingVendedores();
+
+  // Dynamic Sales Trend Chart per Period (1M, 3M, 6M, 12M) & Selected Company
+  const getDynamicChartData = () => {
+    let periods: string[] = [];
+    if (filters.period === '1M') {
+      periods = ['Semana 1', 'Semana 2', 'Semana 3', 'Semana 4'];
+    } else if (filters.period === '3M') {
+      periods = ['Jul 2026', 'Ago 2026', 'Sep 2026'];
+    } else if (filters.period === '6M') {
+      periods = ['Abr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Ago 2026', 'Sep 2026'];
+    } else {
+      // 12M
+      periods = ['Oct 2025', 'Nov 2025', 'Dic 2025', 'Ene 2026', 'Feb 2026', 'Mar 2026', 'Abr 2026', 'May 2026', 'Jun 2026', 'Jul 2026', 'Ago 2026', 'Sep 2026'];
+    }
+
+    let targetTotal = 48950;
+    if (selectedCardId === '1' || selectedCardId === 's1') targetTotal = 28450;
+    else if (selectedCardId === '2' || selectedCardId === 's2') targetTotal = 13650;
+    else if (selectedCardId === '3' || selectedCardId === 's3') targetTotal = 6850;
+
+    const count = periods.length;
+    return periods.map((p, idx) => {
+      const progressRatio = (idx + 1) / count;
+      const salesVal = Math.round(targetTotal * (0.6 + 0.4 * progressRatio));
+      return {
+        periodo: p,
+        totalVentas: salesVal,
+      };
+    });
+  };
+
+  const displayChartData = getDynamicChartData();
+
   return (
     <div className="space-y-8 animate-fadeIn">
       {/* Role Preview Switcher Bar */}
@@ -577,37 +652,38 @@ export const Dashboard: React.FC = () => {
             <div className="glass-card rounded-2xl p-6 border border-slate-800/80 bg-slate-900/60 flex flex-col justify-between shadow-xl">
               <div>
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                    <Trophy className="w-4 h-4 text-amber-400" /> RANKING DE VENDEDORES
-                  </h3>
+                  <div>
+                    <h3 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
+                      <Trophy className="w-4 h-4 text-amber-400" /> RANKING DE VENDEDORES
+                    </h3>
+                    <p className="text-[11px] text-emerald-400 font-semibold mt-0.5">
+                      {selectedCompany ? selectedCompany.nombre : 'Todas las Empresas'}
+                    </p>
+                  </div>
                   <span className="text-[10px] uppercase tracking-widest font-bold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                     CUOTA %
                   </span>
                 </div>
                 <div className="space-y-3">
-                  {topVendedores.map((vendedor, index) => {
-                    const mockQuotaPercentages = [94, 87, 72, 58, 45];
-                    const quotaPct = mockQuotaPercentages[index] || 60;
-                    return (
-                      <div key={vendedor.id} className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center space-x-3">
-                            <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-xs">
-                              {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
-                            </div>
-                            <div>
-                              <p className="text-xs font-bold text-white leading-tight">{vendedor.nombre}</p>
-                              <p className="text-[10px] text-slate-400">{vendedor.negocio}</p>
-                            </div>
+                  {displayRankingVendedores.map((vendedor, index) => (
+                    <div key={vendedor.id} className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80 space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center font-bold text-xs">
+                            {index === 0 ? '🥇' : index === 1 ? '🥈' : index === 2 ? '🥉' : `${index + 1}`}
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs font-extrabold text-emerald-400 font-mono">{formatCurrency(vendedor.totalVendido)}</p>
-                            <span className="text-[10px] font-bold text-indigo-400 font-mono">{quotaPct}% cuota</span>
+                          <div>
+                            <p className="text-xs font-bold text-white leading-tight">{vendedor.nombre}</p>
+                            <p className="text-[10px] text-slate-400">{vendedor.negocio}</p>
                           </div>
                         </div>
+                        <div className="text-right">
+                          <p className="text-xs font-extrabold text-emerald-400 font-mono">{formatCurrency(vendedor.totalVendido)}</p>
+                          <span className="text-[10px] font-bold text-indigo-400 font-mono">{vendedor.cuota}% cuota</span>
+                        </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -616,13 +692,15 @@ export const Dashboard: React.FC = () => {
               <div className="flex items-center justify-between mb-6">
                 <div>
                   <h3 className="text-base font-bold text-white tracking-wide">VENTAS DEL PERÍODO</h3>
-                  <p className="text-xs text-slate-400 font-medium">Comportamiento comercial acumulado</p>
+                  <p className="text-xs text-slate-400 font-medium">
+                    Comportamiento comercial acumulado • <span className="text-emerald-400 font-semibold">{selectedCompany ? selectedCompany.nombre : 'Todas las Empresas'}</span>
+                  </p>
                 </div>
               </div>
 
               <div className="h-80 w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <AreaChart data={displayChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorVentas" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10b981" stopOpacity={0.4} />
