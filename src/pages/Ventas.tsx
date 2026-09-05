@@ -3,12 +3,13 @@ import { apiService } from '../services/apiService';
 import { Venta } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { TrendingUp, Search, Eye, Ban, Calendar, User, Store, Layers } from 'lucide-react';
+import { TrendingUp, Search, Eye, Ban, Calendar, User, Store, Layers, Trash2, AlertTriangle } from 'lucide-react';
 
 export const Ventas: React.FC = () => {
   const [ventas, setVentas] = useState<Venta[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedVenta, setSelectedVenta] = useState<Venta | null>(null);
+  const [deletingVenta, setDeletingVenta] = useState<Venta | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   useEffect(() => {
@@ -37,6 +38,17 @@ export const Ventas: React.FC = () => {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deletingVenta) return;
+    try {
+      await apiService.deleteVenta(deletingVenta.id);
+      setDeletingVenta(null);
+      fetchVentas();
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Error al eliminar venta');
+    }
+  };
+
   const handleOpenDetail = (venta: Venta) => {
     setSelectedVenta(venta);
     setDetailModalOpen(true);
@@ -53,6 +65,7 @@ export const Ventas: React.FC = () => {
 
   return (
     <div className="space-y-6 animate-fadeIn">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
@@ -143,6 +156,13 @@ export const Ventas: React.FC = () => {
                         <Ban className="w-4 h-4" />
                       </button>
                     )}
+                    <button
+                      onClick={() => setDeletingVenta(v)}
+                      className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
+                      title="Eliminar Registro de Venta"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -223,6 +243,44 @@ export const Ventas: React.FC = () => {
           </div>
         )}
       </Modal>
+
+      {/* Delete Confirmation Modal */}
+      {deletingVenta && (
+        <Modal
+          isOpen={!!deletingVenta}
+          onClose={() => setDeletingVenta(null)}
+          title="Confirmar Eliminación de Venta"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-rose-300">¿Deseas eliminar este registro de venta?</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Estás a punto de eliminar la venta <strong className="text-white">#{deletingVenta.id}</strong> por un valor total de <strong className="text-emerald-400">${deletingVenta.total.toFixed(2)}</strong>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeletingVenta(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-500/20"
+              >
+                Eliminar Registro
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -156,6 +156,14 @@ export const apiService = {
       return neg || mockNegocios[0];
     }
   },
+  deleteNegocio: async (id: string) => {
+    try {
+      await apiClient.delete(`/negocios/${id}`);
+    } catch {
+      const idx = mockNegocios.findIndex(n => n.id === id);
+      if (idx !== -1) mockNegocios.splice(idx, 1);
+    }
+  },
 
   // Rubros
   getRubros: async (negocioId?: string) => {
@@ -273,6 +281,14 @@ export const apiService = {
       return vend || mockVendedores[0];
     }
   },
+  deleteVendedor: async (id: string) => {
+    try {
+      await apiClient.delete(`/vendedores/${id}`);
+    } catch {
+      const idx = mockVendedores.findIndex(v => v.id === id);
+      if (idx !== -1) mockVendedores.splice(idx, 1);
+    }
+  },
   getVendedorStats: async (id: string) => {
     try {
       const res = await apiClient.get(`/vendedores/${id}/estadisticas`);
@@ -324,6 +340,24 @@ export const apiService = {
       return cli || mockClientes[0];
     }
   },
+  toggleClienteStatus: async (id: string, estado: 'ACTIVO' | 'INACTIVO') => {
+    try {
+      const res = await apiClient.patch<Cliente>(`/clientes/${id}/status`, { estado });
+      return res.data;
+    } catch {
+      const cli = mockClientes.find(c => c.id === id);
+      if (cli) cli.estado = estado;
+      return cli || mockClientes[0];
+    }
+  },
+  deleteCliente: async (id: string) => {
+    try {
+      await apiClient.delete(`/clientes/${id}`);
+    } catch {
+      const idx = mockClientes.findIndex(c => c.id === id);
+      if (idx !== -1) mockClientes.splice(idx, 1);
+    }
+  },
 
   // Productos & Servicios
   getProductosServicios: async (negocioId?: string, rubroId?: string, tipo?: string) => {
@@ -361,6 +395,34 @@ export const apiService = {
       };
       mockProductosServicios.unshift(newProd);
       return newProd;
+    }
+  },
+  updateProductoServicio: async (id: string, data: Partial<ProductoServicio>) => {
+    try {
+      const res = await apiClient.patch<ProductoServicio>(`/productos-servicios/${id}`, data);
+      return res.data;
+    } catch {
+      const prod = mockProductosServicios.find(p => p.id === id);
+      if (prod) Object.assign(prod, data);
+      return prod || mockProductosServicios[0];
+    }
+  },
+  toggleProductoStatus: async (id: string, estado: 'ACTIVO' | 'INACTIVO') => {
+    try {
+      const res = await apiClient.patch<ProductoServicio>(`/productos-servicios/${id}/status`, { estado });
+      return res.data;
+    } catch {
+      const prod = mockProductosServicios.find(p => p.id === id);
+      if (prod) prod.estado = estado;
+      return prod || mockProductosServicios[0];
+    }
+  },
+  deleteProductoServicio: async (id: string) => {
+    try {
+      await apiClient.delete(`/productos-servicios/${id}`);
+    } catch {
+      const idx = mockProductosServicios.findIndex(p => p.id === id);
+      if (idx !== -1) mockProductosServicios.splice(idx, 1);
     }
   },
 
@@ -417,6 +479,14 @@ export const apiService = {
       const vta = mockVentas.find(v => v.id === id);
       if (vta) vta.estado = 'ANULADA';
       return vta || mockVentas[0];
+    }
+  },
+  deleteVenta: async (id: string) => {
+    try {
+      await apiClient.delete(`/ventas/${id}`);
+    } catch {
+      const idx = mockVentas.findIndex(v => v.id === id);
+      if (idx !== -1) mockVentas.splice(idx, 1);
     }
   },
 

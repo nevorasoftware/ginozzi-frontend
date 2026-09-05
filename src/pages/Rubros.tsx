@@ -3,7 +3,7 @@ import { Rubro, Negocio } from '../types';
 import { apiService } from '../services/apiService';
 import { Modal } from '../components/Modal';
 import { StatusBadge } from '../components/StatusBadge';
-import { Layers, Plus, Search, Edit2, CheckCircle, XCircle, Trash2, Building2 } from 'lucide-react';
+import { Layers, Plus, Search, Edit2, CheckCircle, XCircle, Trash2, Building2, AlertTriangle } from 'lucide-react';
 
 export const RubrosPage: React.FC = () => {
   const [rubros, setRubros] = useState<Rubro[]>([]);
@@ -15,6 +15,8 @@ export const RubrosPage: React.FC = () => {
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingRubro, setEditingRubro] = useState<Rubro | null>(null);
+  const [deletingRubro, setDeletingRubro] = useState<Rubro | null>(null);
+
   const [formData, setFormData] = useState({
     negocioId: '',
     nombre: '',
@@ -81,6 +83,17 @@ export const RubrosPage: React.FC = () => {
     const nextStatus = rubro.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO';
     await apiService.toggleRubroStatus(rubro.id, nextStatus);
     loadData();
+  };
+
+  const handleDelete = async () => {
+    if (!deletingRubro) return;
+    try {
+      await apiService.deleteRubro(deletingRubro.id);
+      setDeletingRubro(null);
+      loadData();
+    } catch (err) {
+      console.error('Error al eliminar rubro:', err);
+    }
   };
 
   const filteredRubros = rubros.filter((r) => {
@@ -180,10 +193,17 @@ export const RubrosPage: React.FC = () => {
                       <td className="py-3.5 px-4 text-right space-x-2">
                         <button
                           onClick={() => handleOpenEditModal(rubro)}
-                          className="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition"
-                          title="Editar"
+                          className="p-1.5 bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 rounded-lg transition"
+                          title="Editar Rubro"
                         >
                           <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setDeletingRubro(rubro)}
+                          className="p-1.5 bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 rounded-lg transition"
+                          title="Eliminar Rubro"
+                        >
+                          <Trash2 className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => handleToggleStatus(rubro)}
@@ -290,6 +310,44 @@ export const RubrosPage: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      {/* Confirm Delete Modal */}
+      {deletingRubro && (
+        <Modal
+          isOpen={!!deletingRubro}
+          onClose={() => setDeletingRubro(null)}
+          title="Confirmar Eliminación de Rubro"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-rose-300">¿Deseas eliminar este rubro?</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Estás a punto de eliminar el rubro <strong className="text-white">{deletingRubro.nombre}</strong>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeletingRubro(null)}
+                className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white text-xs font-bold rounded-lg shadow-lg shadow-rose-600/20"
+              >
+                Eliminar Registro
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

@@ -3,13 +3,15 @@ import { apiService } from '../services/apiService';
 import { Negocio, Empresario } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { Store, Plus, Search, Percent, Mail, Phone } from 'lucide-react';
+import { Store, Plus, Search, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 export const Negocios: React.FC = () => {
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [empresarios, setEmpresarios] = useState<Empresario[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingNegocio, setEditingNegocio] = useState<Negocio | null>(null);
+  const [deletingNegocio, setDeletingNegocio] = useState<Negocio | null>(null);
 
   const [formData, setFormData] = useState({
     empresarioId: '',
@@ -33,7 +35,7 @@ export const Negocios: React.FC = () => {
       ]);
       setNegocios(negData);
       setEmpresarios(empData);
-      if (empData.length > 0) {
+      if (empData.length > 0 && !formData.empresarioId) {
         setFormData((prev) => ({ ...prev, empresarioId: empData[0].id }));
       }
     } catch (e) {
@@ -41,14 +43,47 @@ export const Negocios: React.FC = () => {
     }
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingNegocio(null);
+    setFormData({
+      empresarioId: empresarios[0]?.id || '',
+      nombre: '',
+      rubro: 'Tecnología',
+      telefono: '',
+      correo: '',
+      porcentajeGanancia: 15.0,
+      estado: 'ACTIVO',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (neg: Negocio) => {
+    setEditingNegocio(neg);
+    setFormData({
+      empresarioId: neg.empresarioId,
+      nombre: neg.nombre,
+      rubro: neg.rubro,
+      telefono: neg.telefono,
+      correo: neg.correo,
+      porcentajeGanancia: neg.porcentajeGanancia,
+      estado: neg.estado as 'ACTIVO' | 'INACTIVO',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiService.createNegocio(formData);
+      if (editingNegocio) {
+        await apiService.updateNegocio(editingNegocio.id, formData);
+      } else {
+        await apiService.createNegocio(formData);
+      }
       setIsModalOpen(false);
+      setEditingNegocio(null);
       fetchData();
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Error al crear negocio');
+      alert(e.response?.data?.message || 'Error al guardar negocio');
     }
   };
 
@@ -59,6 +94,17 @@ export const Negocios: React.FC = () => {
       fetchData();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingNegocio) return;
+    try {
+      await apiService.deleteNegocio(deletingNegocio.id);
+      setDeletingNegocio(null);
+      fetchData();
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Error al eliminar negocio');
     }
   };
 
@@ -78,7 +124,7 @@ export const Negocios: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center justify-center px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 text-xs tracking-wide transition-all"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -136,16 +182,32 @@ export const Negocios: React.FC = () => {
                     <StatusBadge status={neg.estado} />
                   </td>
                   <td className="p-4 text-right">
-                    <button
-                      onClick={() => handleToggleStatus(neg)}
-                      className={`px-3 py-1.5 rounded-lg font-semibold text-[11px] border transition-colors ${
-                        neg.estado === 'ACTIVO'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                      }`}
-                    >
-                      {neg.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
-                    </button>
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => handleOpenEditModal(neg)}
+                        title="Editar Negocio"
+                        className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingNegocio(neg)}
+                        title="Eliminar Negocio"
+                        className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleStatus(neg)}
+                        className={`px-2.5 py-1.5 rounded-lg font-semibold text-[11px] border transition-colors ${
+                          neg.estado === 'ACTIVO'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        {neg.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -154,9 +216,13 @@ export const Negocios: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Nuevo Negocio">
-        <form onSubmit={handleCreate} className="space-y-4">
+      {/* Modal Creación/Edición */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={editingNegocio ? "Editar Negocio" : "Registrar Nuevo Negocio"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Empresario Propietario</label>
             <select
@@ -254,11 +320,49 @@ export const Negocios: React.FC = () => {
               type="submit"
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20"
             >
-              Guardar Negocio
+              {editingNegocio ? "Actualizar Negocio" : "Guardar Negocio"}
             </button>
           </div>
         </form>
       </Modal>
+
+      {/* Modal Confirmar Eliminación */}
+      {deletingNegocio && (
+        <Modal
+          isOpen={!!deletingNegocio}
+          onClose={() => setDeletingNegocio(null)}
+          title="Confirmar Eliminación"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-rose-300">¿Deseas eliminar este negocio?</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Estás a punto de eliminar el negocio <strong className="text-white">{deletingNegocio.nombre}</strong>. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeletingNegocio(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-500/20"
+              >
+                Eliminar Registro
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
     </div>
   );
 };

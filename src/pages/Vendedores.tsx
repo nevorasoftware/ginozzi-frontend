@@ -3,7 +3,7 @@ import { apiService } from '../services/apiService';
 import { Vendedor, Negocio, Empresario, Rubro } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
-import { Users, Plus, Search, CreditCard, Layers } from 'lucide-react';
+import { Users, Plus, Search, CreditCard, Layers, Pencil, Trash2, AlertTriangle } from 'lucide-react';
 
 export const Vendedores: React.FC = () => {
   const [vendedores, setVendedores] = useState<Vendedor[]>([]);
@@ -12,6 +12,8 @@ export const Vendedores: React.FC = () => {
   const [rubros, setRubros] = useState<Rubro[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [editingVendedor, setEditingVendedor] = useState<Vendedor | null>(null);
+  const [deletingVendedor, setDeletingVendedor] = useState<Vendedor | null>(null);
   const [statsModalOpen, setStatsModalOpen] = useState(false);
   const [selectedStats, setSelectedStats] = useState<any>(null);
 
@@ -50,7 +52,7 @@ export const Vendedores: React.FC = () => {
       setNegocios(negData);
       setRubros(rubData);
 
-      if (empData.length > 0) {
+      if (empData.length > 0 && !selectedEmpresarioId) {
         setSelectedEmpresarioId(empData[0].id);
         const filteredNegs = negData.filter(n => n.empresarioId === empData[0].id);
         setAvailableNegocios(filteredNegs);
@@ -70,7 +72,6 @@ export const Vendedores: React.FC = () => {
     }
   };
 
-  // Dependent Select Logic: When Empresario Changes
   const handleEmpresarioChange = (empId: string) => {
     setSelectedEmpresarioId(empId);
     const filteredNegs = negocios.filter(n => n.empresarioId === empId);
@@ -88,7 +89,6 @@ export const Vendedores: React.FC = () => {
     }));
   };
 
-  // Dependent Select Logic: When Negocio Changes
   const handleNegocioChange = (negId: string) => {
     const filteredRubs = rubros.filter(r => r.negocioId === negId);
     setAvailableRubros(filteredRubs);
@@ -100,14 +100,72 @@ export const Vendedores: React.FC = () => {
     }));
   };
 
-  const handleCreate = async (e: React.FormEvent) => {
+  const handleOpenCreateModal = () => {
+    setEditingVendedor(null);
+    const empId = empresarios[0]?.id || '';
+    const filteredNegs = negocios.filter(n => n.empresarioId === empId);
+    const firstNegId = filteredNegs[0]?.id || '';
+    const filteredRubs = rubros.filter(r => r.negocioId === firstNegId);
+
+    setSelectedEmpresarioId(empId);
+    setAvailableNegocios(filteredNegs);
+    setAvailableRubros(filteredRubs);
+
+    setFormData({
+      empresarioId: empId,
+      negocioId: firstNegId,
+      rubroId: filteredRubs[0]?.id || '',
+      nombre: '',
+      apellido: '',
+      correo: '',
+      telefono: '',
+      dui: '',
+      contrasena: 'Vendedor123!',
+      estado: 'ACTIVO',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleOpenEditModal = (vend: Vendedor) => {
+    setEditingVendedor(vend);
+    const empId = vend.empresarioId || (vend.negocio?.empresarioId) || empresarios[0]?.id || '';
+    const filteredNegs = negocios.filter(n => n.empresarioId === empId);
+    const filteredRubs = rubros.filter(r => r.negocioId === vend.negocioId);
+
+    setSelectedEmpresarioId(empId);
+    setAvailableNegocios(filteredNegs);
+    setAvailableRubros(filteredRubs);
+
+    setFormData({
+      empresarioId: empId,
+      negocioId: vend.negocioId,
+      rubroId: vend.rubroId || '',
+      nombre: vend.nombre,
+      apellido: vend.apellido,
+      correo: vend.correo,
+      telefono: vend.telefono,
+      dui: vend.dui,
+      contrasena: '',
+      estado: vend.estado as 'ACTIVO' | 'INACTIVO' | 'BLOQUEADO',
+    });
+    setIsModalOpen(true);
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await apiService.createVendedor(formData);
+      if (editingVendedor) {
+        const updatePayload: any = { ...formData };
+        if (!updatePayload.contrasena) delete updatePayload.contrasena;
+        await apiService.updateVendedor(editingVendedor.id, updatePayload);
+      } else {
+        await apiService.createVendedor(formData);
+      }
       setIsModalOpen(false);
+      setEditingVendedor(null);
       fetchData();
     } catch (e: any) {
-      alert(e.response?.data?.message || 'Error al registrar vendedor');
+      alert(e.response?.data?.message || 'Error al guardar vendedor');
     }
   };
 
@@ -117,6 +175,17 @@ export const Vendedores: React.FC = () => {
       fetchData();
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!deletingVendedor) return;
+    try {
+      await apiService.deleteVendedor(deletingVendedor.id);
+      setDeletingVendedor(null);
+      fetchData();
+    } catch (e: any) {
+      alert(e.response?.data?.message || 'Error al eliminar vendedor');
     }
   };
 
@@ -149,7 +218,7 @@ export const Vendedores: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleOpenCreateModal}
           className="flex items-center justify-center px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 text-xs tracking-wide transition-all"
         >
           <Plus className="w-4 h-4 mr-2" />
@@ -218,25 +287,41 @@ export const Vendedores: React.FC = () => {
                   <td className="p-4">
                     <StatusBadge status={vend.estado} />
                   </td>
-                  <td className="p-4 text-right space-x-2">
-                    <button
-                      onClick={() => handleViewStats(vend)}
-                      className="px-2.5 py-1 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20 font-semibold text-[11px]"
-                    >
-                      Métricas
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleToggleStatus(vend, vend.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO')
-                      }
-                      className={`px-2.5 py-1 rounded-lg font-semibold text-[11px] border transition-colors ${
-                        vend.estado === 'ACTIVO'
-                          ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
-                          : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
-                      }`}
-                    >
-                      {vend.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
-                    </button>
+                  <td className="p-4 text-right">
+                    <div className="flex items-center justify-end space-x-2">
+                      <button
+                        onClick={() => handleViewStats(vend)}
+                        className="px-2 py-1.5 rounded-lg bg-indigo-500/10 text-indigo-400 border border-indigo-500/30 hover:bg-indigo-500/20 font-semibold text-[11px]"
+                      >
+                        Métricas
+                      </button>
+                      <button
+                        onClick={() => handleOpenEditModal(vend)}
+                        title="Editar Vendedor"
+                        className="p-1.5 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/30 hover:bg-blue-500/20 transition-colors"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => setDeletingVendedor(vend)}
+                        title="Eliminar Vendedor"
+                        className="p-1.5 rounded-lg bg-rose-500/10 text-rose-400 border border-rose-500/30 hover:bg-rose-500/20 transition-colors"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() =>
+                          handleToggleStatus(vend, vend.estado === 'ACTIVO' ? 'INACTIVO' : 'ACTIVO')
+                        }
+                        className={`px-2.5 py-1.5 rounded-lg font-semibold text-[11px] border transition-colors ${
+                          vend.estado === 'ACTIVO'
+                            ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
+                            : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
+                        }`}
+                      >
+                        {vend.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -245,10 +330,13 @@ export const Vendedores: React.FC = () => {
         </div>
       </div>
 
-      {/* Modal Create Vendedor with Cascading Dependent Selects */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title="Registrar Nuevo Vendedor (Jerarquía Completa)">
-        <form onSubmit={handleCreate} className="space-y-4">
-          {/* Step 1: Select Empresario */}
+      {/* Modal Create / Edit Vendedor */}
+      <Modal 
+        isOpen={isModalOpen} 
+        onClose={() => setIsModalOpen(false)} 
+        title={editingVendedor ? "Editar Vendedor" : "Registrar Nuevo Vendedor (Jerarquía Completa)"}
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
               1. Empresario *
@@ -267,7 +355,6 @@ export const Vendedores: React.FC = () => {
             </select>
           </div>
 
-          {/* Step 2: Select Negocio (Filtered by Empresario) */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
               2. Negocio Asignado *
@@ -290,7 +377,6 @@ export const Vendedores: React.FC = () => {
             </select>
           </div>
 
-          {/* Step 3: Select Rubro (Filtered by Negocio) */}
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
               3. Rubro Específico *
@@ -375,12 +461,15 @@ export const Vendedores: React.FC = () => {
               />
             </div>
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Contraseña Inicial</label>
+              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                {editingVendedor ? 'Nueva Contraseña (Opcional)' : 'Contraseña Inicial'}
+              </label>
               <input
                 type="password"
-                required
+                required={!editingVendedor}
                 value={formData.contrasena}
                 onChange={(e) => setFormData({ ...formData, contrasena: e.target.value })}
+                placeholder={editingVendedor ? 'Dejar en blanco para conservar actual' : 'Vendedor123!'}
                 className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
               />
             </div>
@@ -398,11 +487,49 @@ export const Vendedores: React.FC = () => {
               type="submit"
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20"
             >
-              Guardar Vendedor
+              {editingVendedor ? "Actualizar Vendedor" : "Guardar Vendedor"}
             </button>
           </div>
         </form>
       </Modal>
+
+      {/* Seller Delete Confirmation Modal */}
+      {deletingVendedor && (
+        <Modal
+          isOpen={!!deletingVendedor}
+          onClose={() => setDeletingVendedor(null)}
+          title="Confirmar Eliminación"
+        >
+          <div className="space-y-4">
+            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-rose-400 shrink-0 mt-0.5" />
+              <div>
+                <p className="text-xs font-bold text-rose-300">¿Deseas eliminar este vendedor?</p>
+                <p className="text-[11px] text-slate-400 mt-1">
+                  Estás a punto de eliminar a <strong className="text-white">{deletingVendedor.nombre} {deletingVendedor.apellido}</strong> y sus credenciales de usuario. Esta acción no se puede deshacer.
+                </p>
+              </div>
+            </div>
+
+            <div className="pt-2 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeletingVendedor(null)}
+                className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold rounded-xl"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="px-4 py-2 bg-rose-500 hover:bg-rose-400 text-white text-xs font-bold rounded-xl shadow-lg shadow-rose-500/20"
+              >
+                Eliminar Registro
+              </button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* Seller Stats Modal */}
       <Modal isOpen={statsModalOpen} onClose={() => setStatsModalOpen(false)} title="Métricas de Rendimiento del Vendedor">
