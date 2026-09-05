@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { apiService } from '../services/apiService';
-import { Negocio, Empresario } from '../types';
+import { Negocio, Empresario, Rubro } from '../types';
 import { StatusBadge } from '../components/StatusBadge';
 import { Modal } from '../components/Modal';
 import { Store, Plus, Search, Pencil, Trash2, AlertTriangle } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Store, Plus, Search, Pencil, Trash2, AlertTriangle } from 'lucide-react
 export const Negocios: React.FC = () => {
   const [negocios, setNegocios] = useState<Negocio[]>([]);
   const [empresarios, setEmpresarios] = useState<Empresario[]>([]);
+  const [rubros, setRubros] = useState<Rubro[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingNegocio, setEditingNegocio] = useState<Negocio | null>(null);
@@ -29,12 +30,14 @@ export const Negocios: React.FC = () => {
 
   const fetchData = async () => {
     try {
-      const [negData, empData] = await Promise.all([
+      const [negData, empData, rubData] = await Promise.all([
         apiService.getNegocios(),
         apiService.getEmpresarios(),
+        apiService.getRubros(),
       ]);
       setNegocios(negData);
       setEmpresarios(empData);
+      setRubros(rubData);
       if (empData.length > 0 && !formData.empresarioId) {
         setFormData((prev) => ({ ...prev, empresarioId: empData[0].id }));
       }
@@ -109,6 +112,14 @@ export const Negocios: React.FC = () => {
   };
 
   const [selectedNegocioFilter, setSelectedNegocioFilter] = useState<string>('');
+  const [selectedRubroFilter, setSelectedRubroFilter] = useState<string>('');
+
+  const availableRubroNames = Array.from(
+    new Set([
+      ...negocios.map((n) => n.rubro),
+      ...rubros.map((r) => r.nombre),
+    ].filter(Boolean))
+  );
 
   const filtered = negocios.filter((n) => {
     const matchesSearch =
@@ -117,7 +128,12 @@ export const Negocios: React.FC = () => {
 
     const matchesNegocio = !selectedNegocioFilter || n.id === selectedNegocioFilter;
 
-    return matchesSearch && matchesNegocio;
+    const matchesRubro =
+      !selectedRubroFilter ||
+      n.rubro.toLowerCase() === selectedRubroFilter.toLowerCase() ||
+      n.rubros?.some((r) => r.nombre.toLowerCase() === selectedRubroFilter.toLowerCase());
+
+    return matchesSearch && matchesNegocio && matchesRubro;
   });
 
   return (
@@ -151,18 +167,33 @@ export const Negocios: React.FC = () => {
           />
         </div>
 
-        <select
-          value={selectedNegocioFilter}
-          onChange={(e) => setSelectedNegocioFilter(e.target.value)}
-          className="w-full sm:w-64 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
-        >
-          <option value="">Todos los negocios</option>
-          {negocios.map((n) => (
-            <option key={n.id} value={n.id}>
-              {n.nombre}
-            </option>
-          ))}
-        </select>
+        <div className="flex flex-col sm:flex-row items-center gap-3 w-full sm:w-auto">
+          <select
+            value={selectedRubroFilter}
+            onChange={(e) => setSelectedRubroFilter(e.target.value)}
+            className="w-full sm:w-48 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los rubros</option>
+            {availableRubroNames.map((rName) => (
+              <option key={rName} value={rName}>
+                {rName}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={selectedNegocioFilter}
+            onChange={(e) => setSelectedNegocioFilter(e.target.value)}
+            className="w-full sm:w-48 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+          >
+            <option value="">Todos los negocios</option>
+            {negocios.map((n) => (
+              <option key={n.id} value={n.id}>
+                {n.nombre}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       {/* Table */}
