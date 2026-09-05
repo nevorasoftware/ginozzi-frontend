@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { apiService } from '../services/apiService';
 import { Shield, Sparkles, Lock, Mail, ArrowRight } from 'lucide-react';
+import creatorLogo from '../assets/creator-logo.jpg';
 
 interface LoginProps {
   onLoginSuccess: (user: any, token: string, refreshToken: string) => void;
@@ -13,6 +14,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const currentYear = new Date().getFullYear();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,19 +39,19 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#070b14] flex flex-col justify-center items-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#070b14] flex flex-col justify-between items-center p-4 relative overflow-hidden">
       {/* Dynamic Background Glows */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-10 right-10 w-80 h-80 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-md my-auto">
         {/* Header Logo */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-tr from-emerald-500 to-indigo-600 shadow-2xl shadow-emerald-500/20 mb-4">
             <span className="text-3xl font-extrabold text-white">G</span>
           </div>
           <h1 className="text-3xl font-black tracking-tight text-white font-sans">GINOZZI</h1>
-          <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">Plataforma de Administración Commercial</p>
+          <p className="text-xs text-slate-400 font-semibold tracking-wider uppercase mt-1">Plataforma de Administración Comercial</p>
         </div>
 
         {/* Login Form Card */}
@@ -143,6 +145,21 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
           </div>
         </div>
       </div>
+
+      {/* Footer info in Login */}
+      <footer className="w-full text-center py-4 z-10">
+        <div className="inline-flex flex-wrap items-center justify-center gap-2 px-4 py-2 bg-slate-900/80 border border-slate-800/80 rounded-2xl backdrop-blur-md shadow-lg text-xs text-slate-400">
+          <span>&copy; {currentYear} <strong>GINOZZI SaaS Platform</strong>.</span>
+          <span className="text-slate-600">•</span>
+          <span className="text-slate-400">Creado por</span>
+          <strong className="text-white">Bryan Siguenza / Jonathan Giron</strong>
+          <img
+            src={creatorLogo}
+            alt="Logo Creadores"
+            className="w-5 h-5 rounded-md object-cover border border-emerald-500/40 shadow-sm ml-1"
+          />
+        </div>
+      </footer>
     </div>
   );
 };

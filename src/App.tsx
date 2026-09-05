@@ -13,6 +13,7 @@ import { Estadisticas } from './pages/Estadisticas';
 import { PerfilConfiguracion } from './pages/PerfilConfiguracion';
 import { Sidebar } from './components/Sidebar';
 import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
 
 export function App() {
   const [user, setUser] = useState<any>(() => {
@@ -77,6 +78,8 @@ export function App() {
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
+
+          <Footer />
         </div>
       </div>
     </Router>
