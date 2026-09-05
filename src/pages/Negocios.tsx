@@ -154,7 +154,7 @@ export const Negocios: React.FC = () => {
               <tr className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
                 <th className="p-4">Nombre Negocio</th>
                 <th className="p-4">Rubro</th>
-                <th className="p-4">Empresario Propietario</th>
+                <th className="p-4">Propietario</th>
                 <th className="p-4">% Ganancia</th>
                 <th className="p-4">Vendedores</th>
                 <th className="p-4">Estado</th>
@@ -224,7 +224,7 @@ export const Negocios: React.FC = () => {
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Empresario Propietario</label>
+            <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">Propietario</label>
             <select
               required
               value={formData.empresarioId}

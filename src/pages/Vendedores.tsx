@@ -214,7 +214,7 @@ export const Vendedores: React.FC = () => {
           <h1 className="text-2xl font-black text-white tracking-tight flex items-center gap-2">
             <Users className="h-7 w-7 text-emerald-400" /> Gestión de Vendedores
           </h1>
-          <p className="text-xs text-slate-400 font-medium">Control de agentes comerciales asociados a Empresario, Negocio y Rubro</p>
+          <p className="text-xs text-slate-400 font-medium">Control de agentes comerciales asociados a Propietario, Negocio y Rubro</p>
         </div>
 
         <button
@@ -339,7 +339,7 @@ export const Vendedores: React.FC = () => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-              1. Empresario *
+              1. Propietario *
             </label>
             <select
               required
@@ -366,7 +366,7 @@ export const Vendedores: React.FC = () => {
               className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs text-white focus:outline-none focus:border-emerald-500"
             >
               {availableNegocios.length === 0 ? (
-                <option value="">No hay negocios para este empresario</option>
+                <option value="">No hay negocios para este propietario</option>
               ) : (
                 availableNegocios.map((neg) => (
                   <option key={neg.id} value={neg.id}>

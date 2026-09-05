@@ -25,7 +25,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ user, onLogout, isOpen, setIsOpen }) => {
   const navItems = [
     { label: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-    { label: 'Empresarios', path: '/empresarios', icon: Building2, roles: ['SUPER_ADMIN'] },
+    { label: 'Propietarios', path: '/empresarios', icon: Building2, roles: ['SUPER_ADMIN'] },
     { label: 'Negocios', path: '/negocios', icon: Store, roles: ['SUPER_ADMIN', 'EMPRESARIO'] },
     { label: 'Rubros', path: '/rubros', icon: Layers, roles: ['SUPER_ADMIN', 'EMPRESARIO'] },
     { label: 'Vendedores', path: '/vendedores', icon: Users },

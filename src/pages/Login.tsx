@@ -130,7 +130,7 @@ export const Login: React.FC<LoginProps> = ({ onLoginSuccess }) => {
                 onClick={() => setPreset('carlos.mendoza@techgroup.sv', 'Empresario123!')}
                 className="py-1.5 px-2 bg-slate-800/60 hover:bg-slate-800 border border-slate-700/60 rounded-lg text-[10px] font-medium text-slate-300 transition-colors"
               >
-                Empresario
+                Propietario
               </button>
               <button
                 type="button"

@@ -111,7 +111,7 @@ export const Empresarios: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-black text-white tracking-tight">Gestión de Empresarios</h1>
+          <h1 className="text-2xl font-black text-white tracking-tight">Gestión de Propietarios</h1>
           <p className="text-xs text-slate-400 font-medium">Administración de titulares y propietarios de negocios</p>
         </div>
 
@@ -120,7 +120,7 @@ export const Empresarios: React.FC = () => {
           className="flex items-center justify-center px-4 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-xl shadow-lg shadow-emerald-500/20 text-xs tracking-wide transition-all"
         >
           <Plus className="w-4 h-4 mr-2" />
-          Nuevo Empresario
+          Nuevo Propietario
         </button>
       </div>
 
@@ -130,7 +130,7 @@ export const Empresarios: React.FC = () => {
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
-            placeholder="Buscar empresario por nombre o correo..."
+            placeholder="Buscar propietario por nombre o correo..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60"
@@ -144,7 +144,7 @@ export const Empresarios: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-slate-950/80 text-slate-400 font-semibold border-b border-slate-800">
-                <th className="p-4">Empresario</th>
+                <th className="p-4">Propietario</th>
                 <th className="p-4">Correo Electrónico</th>
                 <th className="p-4">Teléfono</th>
                 <th className="p-4">Negocios Asociados</th>
@@ -181,7 +181,7 @@ export const Empresarios: React.FC = () => {
                       <button
                         onClick={() => handleOpenEditModal(emp)}
                         className="p-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 hover:text-blue-300 rounded-lg border border-slate-700 transition-colors"
-                        title="Editar empresario"
+                        title="Editar propietario"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
                       </button>
@@ -192,14 +192,14 @@ export const Empresarios: React.FC = () => {
                             ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 hover:bg-amber-500/20'
                             : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/20'
                         }`}
-                        title={emp.estado === 'ACTIVO' ? 'Inhabilitar empresario' : 'Habilitar empresario'}
+                        title={emp.estado === 'ACTIVO' ? 'Inhabilitar propietario' : 'Habilitar propietario'}
                       >
                         {emp.estado === 'ACTIVO' ? 'Inhabilitar' : 'Habilitar'}
                       </button>
                       <button
                         onClick={() => setDeleteConfirmEmpresario(emp)}
                         className="p-1.5 bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 rounded-lg border border-rose-500/30 transition-colors"
-                        title="Eliminar empresario"
+                        title="Eliminar propietario"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -219,7 +219,7 @@ export const Empresarios: React.FC = () => {
           setIsModalOpen(false);
           setEditingEmpresario(null);
         }}
-        title={editingEmpresario ? 'Editar Empresario' : 'Registrar Nuevo Empresario'}
+        title={editingEmpresario ? 'Editar Propietario' : 'Registrar Nuevo Propietario'}
       >
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
@@ -300,7 +300,7 @@ export const Empresarios: React.FC = () => {
               type="submit"
               className="px-4 py-2 bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold rounded-xl shadow-lg shadow-emerald-500/20"
             >
-              {editingEmpresario ? 'Guardar Cambios' : 'Guardar Empresario'}
+              {editingEmpresario ? 'Guardar Cambios' : 'Guardar Propietario'}
             </button>
           </div>
         </form>
@@ -316,7 +316,7 @@ export const Empresarios: React.FC = () => {
           <div className="flex items-center space-x-3 p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-300 text-xs">
             <AlertTriangle className="w-6 h-6 flex-shrink-0" />
             <div>
-              <p className="font-bold">¿Eliminar este empresario?</p>
+              <p className="font-bold">¿Eliminar este propietario?</p>
               <p className="text-[11px] text-rose-200/80">
                 Se eliminará a <strong>{deleteConfirmEmpresario?.nombre} {deleteConfirmEmpresario?.apellido}</strong> ({deleteConfirmEmpresario?.correo}) y sus accesos asociados.
               </p>

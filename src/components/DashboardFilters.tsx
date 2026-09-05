@@ -154,8 +154,8 @@ export const DashboardFilters: React.FC<DashboardFiltersProps> = ({ filters, onF
             <span className="flex items-center gap-2 truncate">
               <Building2 className="h-4 w-4 text-indigo-400 shrink-0" />
               {filters.empresarioIds.length === 0
-                ? 'Todos los Empresarios'
-                : `${filters.empresarioIds.length} Empresario(s)`}
+                ? 'Todos los Propietarios'
+                : `${filters.empresarioIds.length} Propietario(s)`}
             </span>
             <span className="text-slate-500 text-xs">▼</span>
           </button>

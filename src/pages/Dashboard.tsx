@@ -341,7 +341,7 @@ export const Dashboard: React.FC = () => {
                   : 'text-slate-400 hover:text-white hover:bg-slate-800'
               }`}
             >
-              {role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'EMPRESARIO' ? 'Empresario' : 'Vendedor'}
+              {role === 'SUPER_ADMIN' ? 'Super Admin' : role === 'EMPRESARIO' ? 'Propietario' : 'Vendedor'}
             </button>
           ))}
         </div>
