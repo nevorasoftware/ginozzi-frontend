@@ -199,12 +199,22 @@ export const Vendedores: React.FC = () => {
     }
   };
 
-  const filtered = vendedores.filter(
-    (v) =>
+  const [selectedNegocioFilter, setSelectedNegocioFilter] = useState<string>('');
+
+  const filtered = vendedores.filter((v) => {
+    const matchesSearch =
       `${v.nombre} ${v.apellido}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
       v.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      v.dui.includes(searchTerm)
-  );
+      (v.dui && v.dui.includes(searchTerm)) ||
+      (v.negocio?.nombre && v.negocio.nombre.toLowerCase().includes(searchTerm.toLowerCase()));
+
+    const matchesNegocio =
+      !selectedNegocioFilter ||
+      v.negocioId === selectedNegocioFilter ||
+      v.negocio?.id === selectedNegocioFilter;
+
+    return matchesSearch && matchesNegocio;
+  });
 
   return (
     <div className="space-y-6 animate-fadeIn">
@@ -226,9 +236,9 @@ export const Vendedores: React.FC = () => {
         </button>
       </div>
 
-      {/* Search Bar */}
-      <div className="glass-card rounded-2xl p-4 border border-slate-800/80 bg-slate-900/40">
-        <div className="relative w-full sm:w-96">
+      {/* Filter Bar */}
+      <div className="glass-card rounded-2xl p-4 border border-slate-800/80 bg-slate-900/40 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="relative w-full sm:w-80">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
           <input
             type="text"
@@ -238,6 +248,19 @@ export const Vendedores: React.FC = () => {
             className="w-full pl-10 pr-4 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60"
           />
         </div>
+
+        <select
+          value={selectedNegocioFilter}
+          onChange={(e) => setSelectedNegocioFilter(e.target.value)}
+          className="w-full sm:w-64 px-3 py-2 bg-slate-950/80 border border-slate-800 rounded-xl text-xs text-slate-300 focus:outline-none focus:border-emerald-500"
+        >
+          <option value="">Todos los negocios</option>
+          {negocios.map((n) => (
+            <option key={n.id} value={n.id}>
+              {n.nombre}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Table */}
